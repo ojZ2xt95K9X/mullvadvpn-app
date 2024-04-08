@@ -342,6 +342,9 @@ dependencies {
     implementation(Dependencies.Kotlin.stdlib)
     implementation(Dependencies.KotlinX.coroutinesAndroid)
 
+    // Accompanist
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
     // UI tooling
     implementation(Dependencies.Compose.uiToolingPreview)
     debugImplementation(Dependencies.Compose.uiTooling)

@@ -1,13 +1,19 @@
 package net.mullvad.mullvadvpn.compose.screen
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.navigation.NavHostController
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.navigation.navigate
 import com.ramcosta.composedestinations.navigation.popBackStack
@@ -28,7 +34,7 @@ import org.koin.androidx.compose.koinViewModel
 
 private val changeLogDestinations = listOf(ConnectDestination, OutOfTimeDestination)
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MullvadApp() {
     val engine = rememberNavHostEngine()
@@ -67,5 +73,19 @@ fun MullvadApp() {
             .first { it in changeLogDestinations }
 
         navController.navigate(ChangelogDestination(it).route)
+    }
+
+    // Globally request notification permission
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val notificationPermissionState =
+            rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+        when (notificationPermissionState.status) {
+            is PermissionStatus.Denied -> {
+                SideEffect { notificationPermissionState.launchPermissionRequest() }
+            }
+            PermissionStatus.Granted -> {
+                // Do nothing
+            }
+        }
     }
 }
