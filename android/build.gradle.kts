@@ -17,6 +17,12 @@ plugins {
 
     alias(libs.plugins.detekt) apply true
     alias(libs.plugins.dependency.versions) apply true
+    //id(Dependencies.Plugin.baselineProfile) version "1.2.4" apply false
+    //id("com.android.test") version "8.3.0" apply false
+    //id(Dependencies.Plugin.androidTestId)
+    //id(Dependencies.Plugin.jetbrainsKotlinAndroid) apply false
+    //id("androidx.baselineprofile") version "1.2.3" apply false
+    //id("com.android.application") version "8.3.0" apply false
 }
 
 buildscript {
@@ -36,6 +42,7 @@ buildscript {
         classpath("$aapt:$agpVersion-$aaptVersion:linux")
         classpath("$aapt:$agpVersion-$aaptVersion:osx")
         classpath("$aapt:$agpVersion-$aaptVersion:windows")
+        classpath(Dependencies.Plugin.baselineProfile)
 
         // Protoc plugin
         val protoc = libs.plugins.protobuf.protoc.get().toString()

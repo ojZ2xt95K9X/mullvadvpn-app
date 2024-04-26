@@ -12,4 +12,10 @@ object Dependencies {
         "de.mannodermaus.junit5:android-test-extensions:${Versions.junit5Android}"
     const val junit5AndroidTestRunner =
         "de.mannodermaus.junit5:android-test-runner:${Versions.junit5Android}"
+
+    object Plugin {
+        const val baselineProfile =
+            "androidx.baselineprofile:androidx.baselineprofile.gradle.plugin:${Versions.Plugin.baselineProfile}"
+        const val baselineProfileId = "androidx.baselineprofile"
+    }
 }

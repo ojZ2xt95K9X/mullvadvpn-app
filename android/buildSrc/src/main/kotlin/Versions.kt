@@ -7,4 +7,9 @@ object Versions {
     const val junitJupiter = "5.10.2"
     const val junit5Android = "1.5.0"
     const val junit5Plugin = "1.10.2.0"
+
+    object Plugin {
+        const val baselineProfile = "1.2.4"
+    }
+
 }

@@ -15,6 +15,9 @@ plugins {
     alias(libs.plugins.compose)
 
     id(Dependencies.junit5AndroidPluginId) version Versions.junit5Plugin
+    // id("com.android.application")
+    // id("androidx.baselineprofile")
+    id(Dependencies.Plugin.baselineProfileId)
 }
 
 val repoRootPath = rootProject.projectDir.absoluteFile.parentFile.absolutePath
@@ -88,6 +91,12 @@ android {
             initWith(buildTypes.getByName(BuildTypes.DEBUG))
             applicationIdSuffix = ".leakcanary"
             matchingFallbacks += BuildTypes.DEBUG
+        }
+        create(BuildTypes.BENCHMARK) {
+            initWith(buildTypes.getByName(BuildTypes.BENCHMARK))
+            isMinifyEnabled = true
+            signingConfig = null
+            matchingFallbacks += BuildTypes.RELEASE
         }
     }
 
@@ -262,7 +271,8 @@ androidComponents {
                     enabledAppVariantTriples.map { (billing, infra, buildType) ->
                         billing + infra.capitalized() + buildType.capitalized()
                     }
-                enabledVariants.contains(currentVariant.name)
+                val required = listOf("ossProdBenchmarkRelease", "playProdBenchmarkRelease", "playDevmoleBenchmarkRelease", "ossProdBenchmarkFdroid", "playStagemoleBenchmarkRelease")
+                enabledVariants.contains(currentVariant.name) or required.contains(currentVariant.name)
             }
     }
 }
@@ -325,6 +335,8 @@ dependencies {
     implementation(projects.tile)
     implementation(projects.lib.theme)
     implementation(projects.service)
+    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    "baselineProfile"(project(":baselineprofile"))
 
     // Play implementation
     playImplementation(projects.lib.billing)
@@ -381,4 +393,10 @@ dependencies {
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(Dependencies.junitJupiterApi)
     androidTestImplementation(Dependencies.junit5AndroidTestCompose)
+}
+
+baselineProfile {
+    //mergeIntoMain = true
+    saveInSrc = true
+    automaticGenerationDuringBuild = false
 }
