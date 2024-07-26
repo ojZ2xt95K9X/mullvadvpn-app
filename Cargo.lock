@@ -4283,6 +4283,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "tonic-build",
+ "tracing",
  "triggered",
  "tun",
  "which",
