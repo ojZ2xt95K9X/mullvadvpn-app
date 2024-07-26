@@ -335,7 +335,7 @@ dependencies {
     implementation(projects.tile)
     implementation(projects.lib.theme)
     implementation(projects.service)
-    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    implementation("androidx.profileinstaller:profileinstaller:1.4.0-alpha01")
     "baselineProfile"(project(":baselineprofile"))
 
     // Play implementation
