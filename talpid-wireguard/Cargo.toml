@@ -30,6 +30,9 @@ tunnel-obfuscation = { path = "../tunnel-obfuscation" }
 rand = "0.8.5"
 surge-ping = "0.8.0"
 rand_chacha = "0.3.1"
+tracing-futures = { workspace = true }
+tracing = { workspace = true }
+
 wireguard-go-rs = { path = "../wireguard-go-rs"}
 byteorder = "1"
 internet-checksum = "0.2"
