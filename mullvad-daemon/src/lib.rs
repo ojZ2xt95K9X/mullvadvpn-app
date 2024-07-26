@@ -1214,6 +1214,7 @@ impl Daemon {
         }
     }
 
+    #[tracing::instrument(skip_all)]
     async fn handle_command(&mut self, command: DaemonCommand) {
         use self::DaemonCommand::*;
         if self.tunnel_state.is_disconnected() {
