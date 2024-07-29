@@ -12,10 +12,11 @@ android {
 
     defaultConfig {
         minSdk = Versions.Android.minSdkVersion
+        targetSdk = Versions.Android.targetSdkVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR,DEBUGGABLE"
-        //testInstrumentationRunnerArguments["targetAppId"] = "net.mullvad.mullvadvpn"
+        testInstrumentationRunnerArguments["targetAppId"] = "net.mullvad.mullvadvpn"
     }
 
     compileOptions {
@@ -70,6 +71,8 @@ android {
         create(Flavors.OSS) { dimension = FlavorDimensions.BILLING }
         create(Flavors.PROD) { dimension = FlavorDimensions.INFRASTRUCTURE }
     }
+
+    experimentalProperties["android.experimental.self-instrumenting"] = true
 }
 
 // This is the configuration block for the Baseline Profile plugin.
@@ -79,10 +82,13 @@ baselineProfile {
 }
 
 dependencies {
-    implementation("androidx.test.ext:junit:1.1.5")
-    implementation("androidx.test.espresso:espresso-core:3.5.1")
+    implementation("androidx.test.ext:junit:1.2.1")
+    implementation("androidx.test.espresso:espresso-core:3.6.1")
     implementation("androidx.test.uiautomator:uiautomator:2.3.0")
     implementation("androidx.benchmark:benchmark-macro-junit4:1.3.0-beta02")
+
+    implementation("androidx.tracing:tracing-perfetto:1.0.0")
+    implementation("androidx.tracing:tracing-perfetto-binary:1.0.0")
 }
 
 androidComponents {

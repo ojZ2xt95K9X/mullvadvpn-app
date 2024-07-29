@@ -393,6 +393,7 @@ dependencies {
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(Dependencies.junitJupiterApi)
     androidTestImplementation(Dependencies.junit5AndroidTestCompose)
+    androidTestImplementation("androidx.benchmark:benchmark-macro-junit4:1.2.4")
 }
 
 baselineProfile {
