@@ -135,23 +135,17 @@ jobs:
   test-framework-linux:
     name: Pre-compile test framework
     needs: prepare-linux
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ needs.prepare-linux.outputs.container_image }}
+    runs-on: [self-hosted, desktop-test, Linux]
     continue-on-error: true
     steps:
-      # Fix for HOME path overridden by GH runners when building in containers, see:
-      # https://github.com/actions/runner/issues/863
-      - name: Fix HOME path
-        run: echo "HOME=/root" >> $GITHUB_ENV
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Docker
-        uses: crazy-max/ghaction-setup-docker@v3
+      # - name: Setup Docker
+      #   uses: crazy-max/ghaction-setup-docker@v3
       - name: Build test framework
         working-directory: test
-        env:
-          CONTAINER_RUNNER: docker
+      #  env:
+      #    CONTAINER_RUNNER: docker
         run: ./scripts/container-run.sh ./scripts/build.sh
       - uses: actions/upload-artifact@v3
         with:
