@@ -162,6 +162,13 @@ function download_app_package {
     fi
 }
 
+function is_linux {
+    case $1 in
+        debian*|ubuntu*|fedora*) true ;;
+        *) false ;;
+    esac
+}
+
 function get_e2e_filename {
     local version=$1
     local os=$2

@@ -44,15 +44,15 @@ nice_time download_app_package "$LATEST_STABLE_RELEASE" "$TEST_OS"
 nice_time download_app_package "$CURRENT_VERSION" "$TEST_OS"
 nice_time download_e2e_executable "$CURRENT_VERSION" "$TEST_OS"
 
-echo "**********************************"
-echo "* Building test manager"
-echo "**********************************"
+# TMP: Assume test-manager has been built already!
+# If we are testing Linux, spood that we compile test-manager and test-runner. Actually use-precompiled artifacts.
+if ! is_linux "$TEST_OS" ; then
+    echo "**********************************"
+    echo "* Building test manager"
+    echo "**********************************"
 
-cargo build -p test-manager
-
-echo "**********************************"
-echo "* Running tests"
-echo "**********************************"
+    cargo build -p test-manager
+fi
 
 mkdir -p "$CI_LOGS_DIR/os/"
 export TEST_REPORT="$CI_LOGS_DIR/${TEST_OS}_report"

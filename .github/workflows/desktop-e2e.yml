@@ -140,12 +140,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      # - name: Setup Docker
-      #   uses: crazy-max/ghaction-setup-docker@v3
       - name: Build test framework
         working-directory: test
-      #  env:
-      #    CONTAINER_RUNNER: docker
         run: ./scripts/container-run.sh ./scripts/build.sh
       - uses: actions/upload-artifact@v3
         with:
@@ -174,6 +170,11 @@ jobs:
           path: ~/.cache/mullvad-test/packages
       - name: Checkout repository
         uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+        if: ${{ needs.test-framework-linux.result == 'success' }}
+        with:
+          name: test-framework-linux
+          path: ./test/dist
       - name: Run end-to-end tests
         shell: bash -ieo pipefail {0}
         run: |
