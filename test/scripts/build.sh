@@ -13,7 +13,7 @@ REPO_ROOT="$SCRIPT_DIR/../.."
 build_linux() {
     mkdir -p "$TEST_FRAMEWORK_ROOT/dist"
     # Build the test manager
-    "$SCRIPT_DIR/build-manager.sh" linux
+    cargo build -p test-manager --release
     cp "$TEST_FRAMEWORK_ROOT/target/release/test-manager" "$TEST_FRAMEWORK_ROOT/dist/"
 
     # Build the test runner
