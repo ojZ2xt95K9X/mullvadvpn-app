@@ -243,19 +243,25 @@ function run_tests_for_os {
         exit 1
     fi
 
-    if [ -n "${TEST_DIST_DIR+x}" ]; then
+    local test_manager_bin
+    local runner_dir_arg
+    if [[ -z "${TEST_DIST_DIR+x}" ]]; then
+        echo "**********************************"
+        echo "* Building test runner"
+        echo "**********************************"
+        nice_time build_test_runner "$vm"
+        test_manager_bin="cargo run --bin test-manager"
+        runner_dir_arg=()
+    else
         if [ ! -x "${TEST_DIST_DIR%/}/test-runner" ]; then
             executable_not_found_in_dist_error test-runner
         fi
 
         echo "**********************************"
-        echo "* Using test-runner in $TEST_DIST_DIR"
+        echo "* Using test-runner test-manager and connection-checker in $TEST_DIST_DIR"
         echo "**********************************"
-    else
-        echo "**********************************"
-        echo "* Building test runner"
-        echo "**********************************"
-        nice_time build_test_runner "$vm"
+        test_manager_bin="${TEST_DIST_DIR%/}/test-manager"
+        runner_dir_arg=(--runner-dir "$TEST_DIST_DIR")
     fi
 
     echo "**********************************"
@@ -283,26 +289,16 @@ function run_tests_for_os {
     test_dir=$(get_test_utls_dir)/..
     read -ra test_filters_arg <<<"${TEST_FILTERS:-}" # Split the string by words into an array
     pushd "$test_dir"
-        if [ -n "${TEST_DIST_DIR+x}" ]; then
-            if [ ! -x "${TEST_DIST_DIR%/}/test-manager" ]; then
-                executable_not_found_in_dist_error test-manager
-            fi
-            test_manager="${TEST_DIST_DIR%/}/test-manager"
-            runner_dir_flag=("--runner-dir" "$TEST_DIST_DIR")
-        else
-            test_manager="cargo run --bin test-manager"
-            runner_dir_flag=()
-        fi
-
-        if ! RUST_LOG_STYLE=always $test_manager run-tests \
+        if ! RUST_LOG_STYLE=always $test_manager_bin \
+            run-tests \
             --account "${ACCOUNT_TOKEN:?Error: ACCOUNT_TOKEN not set}" \
             --app-package "${APP_PACKAGE:?Error: APP_PACKAGE not set}" \
             "${upgrade_package_arg[@]}" \
             "${test_report_arg[@]}" \
+            "${runner_dir_arg[@]}" \
             --package-dir "${package_dir}" \
             --vm "$vm" \
             "${test_filters_arg[@]}" \
-            "${runner_dir_flag[@]}" \
             2>&1 | sed -r "s/${ACCOUNT_TOKEN}/\{ACCOUNT_TOKEN\}/g"; then
             echo "Test run failed"
             exit 1

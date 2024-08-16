@@ -52,6 +52,8 @@ if ! is_linux "$TEST_OS" ; then
     echo "**********************************"
 
     cargo build -p test-manager
+else
+    export TEST_DIST_DIR=$TEST_DIR/dist
 fi
 
 mkdir -p "$CI_LOGS_DIR/os/"
