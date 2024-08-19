@@ -2,9 +2,16 @@
 
 set -eu
 
-function executable_not_found_in_dist_error {
-    1>&2 echo "Executable \"$1\" not found in specified dist dir. Exiting."
-    exit 1
+function assert_executable_exists {
+    if [ ! -e "$1" ]; then
+        1>&2 echo "File \"$1\" does not exist. Exiting."
+        exit 1
+    fi
+
+    if [ ! -x "$1" ]; then
+        1>&2 echo "File \"$1\" is not executable. Exiting."
+        exit 1
+    fi
 }
 
 # Returns the directory of the test-utils.sh script
@@ -30,9 +37,7 @@ function get_current_version {
     local app_dir
     app_dir="$(get_test_utls_dir)/../.."
     if [ -n "${TEST_DIST_DIR+x}" ]; then
-        if [ ! -x "${TEST_DIST_DIR%/}/mullvad-version" ]; then
-            executable_not_found_in_dist_error mullvad-version
-        fi
+        assert_executable_exists "${TEST_DIST_DIR%/}/mullvad-version"
         "${TEST_DIST_DIR%/}/mullvad-version"
     else
         cargo run -q --manifest-path="$app_dir/Cargo.toml" --bin mullvad-version
@@ -253,9 +258,9 @@ function run_tests_for_os {
         test_manager_bin="cargo run --bin test-manager"
         runner_dir_arg=()
     else
-        if [ ! -x "${TEST_DIST_DIR%/}/test-runner" ]; then
-            executable_not_found_in_dist_error test-runner
-        fi
+        assert_executable_exists "${TEST_DIST_DIR%/}/test-runner"
+        assert_executable_exists "${TEST_DIST_DIR%/}/connection-checker"
+        assert_executable_exists "${TEST_DIST_DIR%/}/test-manager"
 
         echo "**********************************"
         echo "* Using test-runner test-manager and connection-checker in $TEST_DIST_DIR"
