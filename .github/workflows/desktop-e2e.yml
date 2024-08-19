@@ -151,7 +151,7 @@ jobs:
 
   e2e-test-linux:
     name: Linux end-to-end tests
-    needs: [prepare-matrices, build-linux]
+    needs: [prepare-matrices, build-linux, test-framework-linux]
     if: |
       !cancelled() &&
       needs.prepare-matrices.outputs.linux_matrix != '[]' &&
