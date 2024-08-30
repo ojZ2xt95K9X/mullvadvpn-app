@@ -1,18 +1,18 @@
 import org.gradle.configurationcache.extensions.capitalized
 
 plugins {
-    id(Dependencies.Plugin.androidTestId)
+    alias(libs.plugins.android.test)
     id(Dependencies.Plugin.baselineProfileId)
-    id(Dependencies.Plugin.kotlinAndroidId)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "net.mullvad.mullvadvpn.baselineprofile"
-    compileSdk = Versions.Android.compileSdkVersion
+    compileSdk = Versions.compileSdkVersion
 
     defaultConfig {
-        minSdk = Versions.Android.minSdkVersion
-        targetSdk = Versions.Android.targetSdkVersion
+        minSdk = Versions.minSdkVersion
+        targetSdk = Versions.targetSdkVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR,DEBUGGABLE"
