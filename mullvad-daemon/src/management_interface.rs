@@ -41,6 +41,7 @@ pub enum Error {
 struct ManagementServiceImpl {
     daemon_tx: DaemonCommandSender,
     subscriptions: Arc<Mutex<Vec<EventsListenerSender>>>,
+    log_reload_handle: crate::logging::ReloadHandle,
 }
 
 pub type ServiceResult<T> = std::result::Result<Response<T>, Status>;
@@ -1073,6 +1074,30 @@ impl ManagementService for ManagementServiceImpl {
 
         Ok(Response::new(feature_indicators))
     }
+
+    #[cfg(not(target_os = "macos"))]
+    async fn set_apple_services_bypass(&self, _: Request<bool>) -> ServiceResult<()> {
+        Ok(Response::new(()))
+    }
+
+    #[cfg(target_os = "macos")]
+    async fn set_apple_services_bypass(&self, request: Request<bool>) -> ServiceResult<()> {
+        log::debug!("set_apple_services_bypass");
+        let enabled = request.into_inner();
+        let (tx, rx) = oneshot::channel();
+        self.send_command_to_daemon(DaemonCommand::SetAppleServicesBypass(tx, enabled))?;
+        self.wait_for_result(rx).await??;
+        Ok(Response::new(()))
+    }
+
+    async fn set_log_settings(&self, request: Request<types::LogSettings>) -> ServiceResult<()> {
+        let log_filter = types::log_settings::LogLevel::try_from(request.into_inner().level)
+            .map_err(|error| Status::invalid_argument(error.to_string()))?;
+        self.log_reload_handle
+            .set_log_filter(log_filter.as_str_name())
+            .map_err(|error| Status::invalid_argument(error.to_string()))?;
+        Ok(Response::new(()))
+    }
 }
 
 impl ManagementServiceImpl {
@@ -1105,6 +1130,7 @@ impl ManagementInterfaceServer {
     pub fn start(
         daemon_tx: DaemonCommandSender,
         rpc_socket_path: impl AsRef<Path>,
+        log_reload_handle: crate::logging::ReloadHandle,
     ) -> Result<ManagementInterfaceServer, Error> {
         let subscriptions = Arc::<Mutex<Vec<EventsListenerSender>>>::default();
         // NOTE: It is important that the channel buffer size is kept at 0. When sending a signal
@@ -1114,6 +1140,7 @@ impl ManagementInterfaceServer {
         let server = ManagementServiceImpl {
             daemon_tx,
             subscriptions: subscriptions.clone(),
+            log_reload_handle,
         };
         let rpc_server_join_handle = mullvad_management_interface::spawn_rpc_server(
             server,
