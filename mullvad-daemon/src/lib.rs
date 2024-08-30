@@ -606,7 +606,7 @@ pub struct DaemonConfig {
     pub endpoint: ApiEndpoint,
     #[cfg(target_os = "android")]
     pub android_context: AndroidContext,
-    pub log_reload_handle: logging::ReloadHandle,
+    pub log_handle: logging::LogHandle,
 }
 
 impl Daemon {
@@ -622,7 +622,7 @@ impl Daemon {
         let management_interface = ManagementInterfaceServer::start(
             command_sender,
             config.rpc_socket_path,
-            config.log_reload_handle,
+            config.log_handle,
         )
         .map_err(Error::ManagementInterfaceError)?;
 
