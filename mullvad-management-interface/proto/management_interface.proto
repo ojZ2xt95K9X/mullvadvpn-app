@@ -127,6 +127,8 @@ service ManagementService {
 
   // Get current feature indicators
   rpc GetFeatureIndicators(google.protobuf.Empty) returns (FeatureIndicators) {}
+
+  rpc SetLogSettings(LogSettings) returns (google.protobuf.Empty) {}
 }
 
 message UUID { string value = 1; }
@@ -782,3 +784,16 @@ message PlayPurchase {
 }
 
 message PlayPurchasePaymentToken { string token = 1; }
+
+message LogSettings {
+  enum LogLevel {
+    OFF = 0;
+    TRACE = 1;
+    DEBUG = 2;
+    INFO = 3;
+    WARN = 4;
+    ERROR = 5;
+  }
+
+  LogLevel level = 1;
+}
