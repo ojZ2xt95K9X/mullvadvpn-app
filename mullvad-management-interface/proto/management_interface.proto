@@ -129,6 +129,7 @@ service ManagementService {
   rpc GetFeatureIndicators(google.protobuf.Empty) returns (FeatureIndicators) {}
 
   rpc SetLogFilter(LogFilter) returns (google.protobuf.Empty) {}
+  rpc LogListen(google.protobuf.Empty) returns (stream LogMessage) {}
 }
 
 message UUID { string value = 1; }
@@ -787,4 +788,8 @@ message PlayPurchasePaymentToken { string token = 1; }
 
 message LogFilter {
   string log_filter = 1;
+}
+
+message LogMessage {
+  string message = 1;
 }
