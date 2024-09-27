@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.dropUnlessResumed
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.ApiAccessListDestination
+import com.ramcosta.composedestinations.generated.destinations.AppObfusctationDestination
 import com.ramcosta.composedestinations.generated.destinations.ReportProblemDestination
 import com.ramcosta.composedestinations.generated.destinations.SplitTunnelingDestination
 import com.ramcosta.composedestinations.generated.destinations.VpnSettingsDestination
@@ -69,6 +70,8 @@ fun Settings(navigator: DestinationsNavigator) {
         onApiAccessClick = dropUnlessResumed { navigator.navigate(ApiAccessListDestination) },
         onReportProblemCellClick =
             dropUnlessResumed { navigator.navigate(ReportProblemDestination) },
+        onAppObfuscationClick =
+            dropUnlessResumed { navigator.navigate(AppObfusctationDestination) },
         onBackClick = dropUnlessResumed { navigator.navigateUp() },
     )
 }
@@ -81,6 +84,7 @@ fun SettingsScreen(
     onSplitTunnelingCellClick: () -> Unit = {},
     onReportProblemCellClick: () -> Unit = {},
     onApiAccessClick: () -> Unit = {},
+    onAppObfuscationClick: () -> Unit = {},
     onBackClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -110,6 +114,14 @@ fun SettingsScreen(
                 NavigationComposeCell(
                     title = stringResource(id = R.string.settings_api_access),
                     onClick = onApiAccessClick,
+                )
+            }
+            item { Spacer(modifier = Modifier.height(Dimens.cellVerticalSpacing)) }
+
+            item {
+                NavigationComposeCell(
+                    title = stringResource(id = R.string.app_obfuscation),
+                    onClick = onAppObfuscationClick,
                 )
             }
             item { Spacer(modifier = Modifier.height(Dimens.cellVerticalSpacing)) }

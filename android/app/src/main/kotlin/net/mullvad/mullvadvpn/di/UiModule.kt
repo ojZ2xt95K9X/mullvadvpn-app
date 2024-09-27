@@ -14,6 +14,7 @@ import net.mullvad.mullvadvpn.lib.payment.PaymentProvider
 import net.mullvad.mullvadvpn.lib.shared.VoucherRepository
 import net.mullvad.mullvadvpn.receiver.BootCompletedReceiver
 import net.mullvad.mullvadvpn.repository.ApiAccessRepository
+import net.mullvad.mullvadvpn.repository.AppObfuscationRepository
 import net.mullvad.mullvadvpn.repository.AutoStartAndConnectOnBootRepository
 import net.mullvad.mullvadvpn.repository.ChangelogRepository
 import net.mullvad.mullvadvpn.repository.CustomListsRepository
@@ -28,6 +29,8 @@ import net.mullvad.mullvadvpn.repository.SettingsRepository
 import net.mullvad.mullvadvpn.repository.SplashCompleteRepository
 import net.mullvad.mullvadvpn.repository.SplitTunnelingRepository
 import net.mullvad.mullvadvpn.ui.MainActivity
+import net.mullvad.mullvadvpn.ui.obfuscation.MainActivityAltGame
+import net.mullvad.mullvadvpn.ui.obfuscation.MainActivityDefault
 import net.mullvad.mullvadvpn.ui.serviceconnection.AppVersionInfoRepository
 import net.mullvad.mullvadvpn.ui.serviceconnection.ServiceConnectionManager
 import net.mullvad.mullvadvpn.usecase.AccountExpiryNotificationUseCase
@@ -53,6 +56,7 @@ import net.mullvad.mullvadvpn.util.IChangelogDataProvider
 import net.mullvad.mullvadvpn.viewmodel.AccountViewModel
 import net.mullvad.mullvadvpn.viewmodel.ApiAccessListViewModel
 import net.mullvad.mullvadvpn.viewmodel.ApiAccessMethodDetailsViewModel
+import net.mullvad.mullvadvpn.viewmodel.AppObfuscationViewModel
 import net.mullvad.mullvadvpn.viewmodel.ChangelogViewModel
 import net.mullvad.mullvadvpn.viewmodel.ConnectViewModel
 import net.mullvad.mullvadvpn.viewmodel.CreateCustomListDialogViewModel
@@ -109,6 +113,13 @@ val uiModule = module {
         ComponentName(androidContext(), BootCompletedReceiver::class.java)
     }
 
+    single<List<ComponentName>>(named(APP_OBFUSCATION_COMPONENTS_NAME)) {
+        listOf(
+            ComponentName(androidContext(), MainActivityDefault::class.java),
+            ComponentName(androidContext(), MainActivityAltGame::class.java),
+        )
+    }
+
     viewModel { SplitTunnelingViewModel(get(), get(), Dispatchers.Default) }
 
     single { ApplicationsProvider(get(), get(named(SELF_PACKAGE_NAME))) }
@@ -140,6 +151,7 @@ val uiModule = module {
             get(named(BOOT_COMPLETED_RECEIVER_COMPONENT_NAME)),
         )
     }
+    single { AppObfuscationRepository(get(), get(named(APP_OBFUSCATION_COMPONENTS_NAME))) }
 
     single { AccountExpiryNotificationUseCase(get()) }
     single { TunnelStateNotificationUseCase(get()) }
@@ -232,6 +244,7 @@ val uiModule = module {
     viewModel { Udp2TcpSettingsViewModel(get()) }
     viewModel { ShadowsocksSettingsViewModel(get(), get()) }
     viewModel { ShadowsocksCustomPortDialogViewModel(get()) }
+    viewModel { AppObfuscationViewModel(get()) }
 
     // This view model must be single so we correctly attach lifecycle and share it with activity
     single { NoDaemonViewModel(get()) }
@@ -240,3 +253,6 @@ val uiModule = module {
 const val SELF_PACKAGE_NAME = "SELF_PACKAGE_NAME"
 const val APP_PREFERENCES_NAME = "${BuildConfig.APPLICATION_ID}.app_preferences"
 const val BOOT_COMPLETED_RECEIVER_COMPONENT_NAME = "BOOT_COMPLETED_RECEIVER_COMPONENT_NAME"
+
+// App obfuscations
+const val APP_OBFUSCATION_COMPONENTS_NAME = "APP_OBFUSCATION_COMPONENTS_NAME"
