@@ -92,6 +92,7 @@ use talpid_types::{
     ErrorExt,
 };
 use tokio::io;
+use tracing::instrument;
 
 /// Delay between generating a new WireGuard key and reconnecting
 const WG_RECONNECT_DELAY: Duration = Duration::from_secs(4 * 60);
@@ -864,6 +865,7 @@ impl Daemon {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     fn handle_initial_target_state(&mut self) {
         match self.target_state.to_strict() {
             either::Either::Right(state) => {
@@ -971,6 +973,7 @@ impl Daemon {
         should_stop
     }
 
+    #[instrument(skip(self))]
     async fn handle_tunnel_state_transition(
         &mut self,
         tunnel_state_transition: TunnelStateTransition,
@@ -1075,6 +1078,7 @@ impl Daemon {
     /// [`InternalDaemonEvent::LocationEvent`].
     ///
     /// See [`Daemon::handle_location_event()`]
+    #[instrument(skip(self))]
     fn fetch_am_i_mullvad(&mut self) {
         // Always abort any ongoing request when entering a new tunnel state
         self.location_handler.abort_current_request();
@@ -1179,6 +1183,7 @@ impl Daemon {
         };
     }
 
+    #[instrument(skip_all)]
     fn reset_rpc_sockets_on_tunnel_state_transition(
         &mut self,
         tunnel_state_transition: &TunnelStateTransition,
@@ -1215,7 +1220,7 @@ impl Daemon {
         }
     }
 
-    #[tracing::instrument(skip_all)]
+    #[tracing::instrument(skip_all, name = "Daemon Command")]
     async fn handle_command(&mut self, command: DaemonCommand) {
         use self::DaemonCommand::*;
         if self.tunnel_state.is_disconnected() {
@@ -1347,6 +1352,7 @@ impl Daemon {
             .notify_app_version(app_version_info);
     }
 
+    #[instrument(skip(self))]
     async fn handle_device_event(&mut self, event: AccountEvent) {
         match &event {
             AccountEvent::Device(PrivateDeviceEvent::Login(device)) => {
@@ -2897,7 +2903,6 @@ impl Daemon {
         self.reconnect_tunnel();
     }
 
-    #[tracing::instrument(skip_all)]
     fn oneshot_send<T>(tx: oneshot::Sender<T>, t: T, msg: &'static str) {
         if tx.send(t).is_err() {
             log::warn!("Unable to send {} to the daemon command sender", msg);

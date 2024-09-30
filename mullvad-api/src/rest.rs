@@ -28,6 +28,7 @@ use std::{
     time::Duration,
 };
 use talpid_types::ErrorExt;
+use tracing::instrument;
 
 pub use hyper::StatusCode;
 
@@ -149,6 +150,7 @@ pub(crate) struct RequestService<T: ConnectionModeProvider> {
 
 impl<T: ConnectionModeProvider + 'static> RequestService<T> {
     /// Constructs a new request service.
+    #[instrument(skip_all)]
     pub fn spawn(
         sni_hostname: Option<String>,
         api_availability: ApiAvailability,
