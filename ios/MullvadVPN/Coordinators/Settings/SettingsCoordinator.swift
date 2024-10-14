@@ -270,7 +270,19 @@ final class SettingsCoordinator: Coordinator, Presentable, Presenting, SettingsV
             return .failed
 
         case .problemReport:
-            return .viewController(UIHostingController(rootView: TestView()))
+            var view = SettingsMultihopView()
+            view.didToggleEnabled = { [weak self] in
+                print($0)
+            }
+
+            let host = UIHostingController(rootView: view)
+            host.title = NSLocalizedString(
+                "NAVIGATION_TITLE_MULTIHOP",
+                tableName: "Settings",
+                value: "Multihop",
+                comment: ""
+            )
+            return .viewController(host)
         }
     }
 
