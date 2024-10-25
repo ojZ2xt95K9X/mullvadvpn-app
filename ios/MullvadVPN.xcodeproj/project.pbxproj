@@ -1865,6 +1865,7 @@
 		7A7AD14D2BF21DCE00B30B3C /* NameInputFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameInputFormatter.swift; sourceTree = "<group>"; };
 		7A7AD28C29DC677800480EF1 /* FirstTimeLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstTimeLaunch.swift; sourceTree = "<group>"; };
 		7A7B3AB52C6DE4DA00D4BCCE /* RestorePurchasesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorePurchasesView.swift; sourceTree = "<group>"; };
+		7A7BB2052CCA79C600FA3963 /* StoreKitTest.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = StoreKitTest.storekit; sourceTree = "<group>"; };
 		7A818F1E29F0305800C7F0F4 /* RootConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootConfiguration.swift; sourceTree = "<group>"; };
 		7A83A0C52B29A750008B5CE7 /* APIAccessMethodsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIAccessMethodsTests.swift; sourceTree = "<group>"; };
 		7A83C3FE2A55B72E00DFB83A /* MullvadVPNApp.xctestplan */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MullvadVPNApp.xctestplan; sourceTree = "<group>"; };
@@ -3711,6 +3712,7 @@
 		58ECD29023F178FD004298B6 /* Configurations */ = {
 			isa = PBXGroup;
 			children = (
+				7A7BB2052CCA79C600FA3963 /* StoreKitTest.storekit */,
 				A935594D2B4E919F00D5D524 /* Api.xcconfig */,
 				5808273B284888BC006B77A4 /* App.xcconfig */,
 				5808273928487E3E006B77A4 /* Base.xcconfig */,

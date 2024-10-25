@@ -142,7 +142,10 @@ extension WelcomeCoordinator: WelcomeViewControllerDelegate {
 
         addChild(coordinator)
 
-        coordinator.start(accountNumber: accountNumber, product: product)
+        Task {
+            let product = try? await Product.products(for: ["one_month"]).first!
+            coordinator.start(accountNumber: accountNumber, product: product!)
+        }
     }
 
     func didRequestToRedeemVoucher(controller: WelcomeViewController) {

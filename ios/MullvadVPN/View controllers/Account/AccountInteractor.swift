@@ -57,8 +57,8 @@ final class AccountInteractor {
         await tunnelManager.unsetAccount()
     }
 
-    func addPayment(_ payment: SKPayment, for accountNumber: String) {
-        storePaymentManager.addPayment(payment, for: accountNumber)
+    func addPayment(_ product: Product, for accountNumber: String) {
+        storePaymentManager.addPayment(product, for: accountNumber)
     }
 
     func restorePurchases(

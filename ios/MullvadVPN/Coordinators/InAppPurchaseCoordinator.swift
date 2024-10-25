@@ -27,7 +27,7 @@ class InAppPurchaseCoordinator: Coordinator, Presenting, Presentable {
         self.interactor = interactor
     }
 
-    func start(accountNumber: String, product: SKProduct) {
+    func start(accountNumber: String, product: Product) {
         interactor.purchase(accountNumber: accountNumber, product: product)
         interactor.didFinishPayment = { [weak self] _, paymentEvent in
             guard let self else { return }

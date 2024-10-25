@@ -195,7 +195,7 @@ class AccountViewController: UIViewController {
         purchaseButton.setTitle(productState.purchaseButtonTitle, for: .normal)
         contentView.purchaseButton.isLoading = productState.isFetching
 
-        purchaseButton.isEnabled = productState.isReceived && isInteractionEnabled
+//        purchaseButton.isEnabled = productState.isReceived && isInteractionEnabled
         contentView.accountDeviceRow.setButtons(enabled: isInteractionEnabled)
         contentView.accountTokenRowView.setButtons(enabled: isInteractionEnabled)
         contentView.restorePurchasesView.setButtons(enabled: isInteractionEnabled)
@@ -250,7 +250,12 @@ class AccountViewController: UIViewController {
     }
 
     @objc private func redeemVoucher() {
-        actionHandler?(.navigateToVoucher)
+//        actionHandler?(.navigateToVoucher)
+        Task {
+            let product = try await Product.products(for: ["one_month"]).first
+            let result = try await product?.purchase()
+            print(result)
+        }
     }
 
     @objc private func deleteAccount() {
@@ -258,16 +263,19 @@ class AccountViewController: UIViewController {
     }
 
     @objc private func doPurchase() {
-        guard case let .received(product) = productState,
-              let accountData = interactor.deviceState.accountData
+//        guard case let .received(product) = productState,
+              guard let accountData = interactor.deviceState.accountData
         else {
             return
         }
 
-        let payment = SKPayment(product: product)
-        interactor.addPayment(payment, for: accountData.number)
+//        let payment = SKPayment(product: product)
+//        setPaymentState(.makingPayment(payment), animated: true)
 
-        setPaymentState(.makingPayment(payment), animated: true)
+        Task {
+            let product = try? await Product.products(for: ["one_month"]).first!
+            interactor.addPayment(product!, for: accountData.number)
+        }
     }
 
     @objc private func restorePurchases() {

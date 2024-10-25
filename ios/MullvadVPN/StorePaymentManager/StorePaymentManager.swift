@@ -135,18 +135,24 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
     /// - Parameters:
     ///   - payment: an intance of `SKPayment`.
     ///   - accountNumber: the account number to credit.
-    func addPayment(_ payment: SKPayment, for accountNumber: String) {
+    func addPayment(_ product: Product, for accountNumber: String)  {
         logger.debug("Validating account before the purchase.")
 
         // Validate account token before adding new payment to the queue.
-        validateAccount(accountNumber: accountNumber) { error in
+        Task {
+            let error = await withCheckedContinuation { continuation in
+                validateAccount(accountNumber: accountNumber) { error in
+                    continuation.resume(returning: error)
+                }
+            }
+
             if let error {
                 self.logger.error("Failed to validate the account. Payment is ignored.")
 
                 let event = StorePaymentEvent.failure(
                     StorePaymentFailure(
                         transaction: nil,
-                        payment: payment,
+                        //                        payment: payment,
                         accountNumber: accountNumber,
                         error: error
                     )
@@ -156,12 +162,35 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
                     observer.storePaymentManager(self, didReceiveEvent: event)
                 }
             } else {
-                self.logger.debug("Add payment to the queue.")
-
-                self.associateAccountNumber(accountNumber, and: payment)
-                self.paymentQueue.add(payment)
+                self.logger.debug("Starting purchase flow.")
+                let result = try await product.purchase()
             }
         }
+
+//        validateAccount(accountNumber: accountNumber) { error in
+//            if let error {
+//                self.logger.error("Failed to validate the account. Payment is ignored.")
+//
+//                let event = StorePaymentEvent.failure(
+//                    StorePaymentFailure(
+//                        transaction: nil,
+////                        payment: payment,
+//                        accountNumber: accountNumber,
+//                        error: error
+//                    )
+//                )
+//
+//                self.observerList.notify { observer in
+//                    observer.storePaymentManager(self, didReceiveEvent: event)
+//                }
+//            } else {
+//                self.logger.debug("Add payment to the queue.")
+//
+//                let result = try await product.purchase()
+////                self.associateAccountNumber(accountNumber, and: payment)
+////                self.paymentQueue.add(payment)
+//            }
+//        }
     }
 
     /// Restore purchases by sending the AppStore receipt to backend.
@@ -328,14 +357,14 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
         let paymentFailure = if let accountToken = deassociateAccountNumber(transaction.payment) {
             StorePaymentFailure(
                 transaction: transaction,
-                payment: transaction.payment,
+//                payment: transaction.payment,
                 accountNumber: accountToken,
                 error: .storePayment(transaction.error!)
             )
         } else {
             StorePaymentFailure(
                 transaction: transaction,
-                payment: transaction.payment,
+//                payment: transaction.payment,
                 accountNumber: nil,
                 error: .noAccountSet
             )
@@ -375,7 +404,7 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
             let event = StorePaymentEvent.failure(
                 StorePaymentFailure(
                     transaction: transaction,
-                    payment: transaction.payment,
+//                    payment: transaction.payment,
                     accountNumber: nil,
                     error: .noAccountSet
                 )
@@ -443,7 +472,7 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
 
             event = StorePaymentEvent.failure(StorePaymentFailure(
                 transaction: transaction,
-                payment: transaction.payment,
+//                payment: transaction.payment,
                 accountNumber: accountNumber,
                 error: error
             ))

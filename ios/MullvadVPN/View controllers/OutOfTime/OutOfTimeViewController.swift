@@ -232,9 +232,12 @@ class OutOfTimeViewController: UIViewController, RootContainment {
         }
 
         let payment = SKPayment(product: product)
-        interactor.addPayment(payment, for: accountData.number)
-
         paymentState = .makingPayment(payment)
+
+        Task {
+            let product = try? await Product.products(for: ["one_month"]).first!
+            interactor.addPayment(product!, for: accountData.number)
+        }
     }
 
     @objc func restorePurchases() {

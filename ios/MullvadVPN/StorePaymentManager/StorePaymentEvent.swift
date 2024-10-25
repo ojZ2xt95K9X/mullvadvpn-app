@@ -24,7 +24,7 @@ enum StorePaymentEvent {
         case let .finished(completion):
             return completion.transaction.payment
         case let .failure(failure):
-            return failure.payment
+            return SKPayment()
         }
     }
 }
@@ -48,7 +48,7 @@ struct StorePaymentFailure {
     let transaction: SKPaymentTransaction?
 
     /// The payment object associated with payment request.
-    let payment: SKPayment
+//    let payment: SKPayment
 
     /// The account number to credit.
     /// May not be available if the payment manager couldn't establish the association between the payment and account number.

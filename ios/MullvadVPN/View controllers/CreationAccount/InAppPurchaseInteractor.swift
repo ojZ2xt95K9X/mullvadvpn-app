@@ -38,9 +38,9 @@ class InAppPurchaseInteractor {
         self.paymentObserver = paymentObserver
     }
 
-    func purchase(accountNumber: String, product: SKProduct) {
-        let payment = SKPayment(product: product)
-        storePaymentManager.addPayment(payment, for: accountNumber)
-        viewControllerDelegate?.didBeginPayment()
+    func purchase(accountNumber: String, product: Product) {
+//        let payment = SKPayment(product: product)
+        storePaymentManager.addPayment(product, for: accountNumber)
+//        viewControllerDelegate?.didBeginPayment()
     }
 }
