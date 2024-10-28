@@ -16,7 +16,7 @@ import UIKit
 /// Manager responsible for handling AppStore payments and passing StoreKit receipts to the backend.
 ///
 /// - Warning: only interact with this object on the main queue.
-final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
+final class StorePaymentManager: NSObject {
     private enum OperationCategory {
         static let sendStoreReceipt = "StorePaymentManager.sendStoreReceipt"
         static let productsRequest = "StorePaymentManager.productsRequest"
@@ -31,22 +31,12 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
     }()
 
     private let backgroundTaskProvider: BackgroundTaskProvider
-    private let paymentQueue: SKPaymentQueue
     private let apiProxy: APIQuerying
     private let accountsProxy: RESTAccountHandling
     private var observerList = ObserverList<StorePaymentObserver>()
-    private let transactionLog: StoreTransactionLog
 
     /// Payment manager's delegate.
     weak var delegate: StorePaymentManagerDelegate?
-
-    /// A dictionary that maps each payment to account number.
-    private var paymentToAccountToken = [SKPayment: String]()
-
-    /// Returns true if the device is able to make payments.
-    static var canMakePayments: Bool {
-        SKPaymentQueue.canMakePayments()
-    }
 
     /// Designated initializer
     ///
@@ -58,36 +48,17 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
     ///   - transactionLog: an instance of transaction log. Typically ``StoreTransactionLog/default``.
     init(
         backgroundTaskProvider: BackgroundTaskProvider,
-        queue: SKPaymentQueue,
         apiProxy: APIQuerying,
-        accountsProxy: RESTAccountHandling,
-        transactionLog: StoreTransactionLog
+        accountsProxy: RESTAccountHandling
     ) {
         self.backgroundTaskProvider = backgroundTaskProvider
-        paymentQueue = queue
         self.apiProxy = apiProxy
         self.accountsProxy = accountsProxy
-        self.transactionLog = transactionLog
     }
 
-    /// Loads transaction log from disk and starts monitoring payment queue.
     func start() {
-        // Load transaction log from file before starting the payment queue.
-        logger.debug("Load transaction log.")
-        transactionLog.read()
-
-        logger.debug("Start payment queue monitoring")
-        paymentQueue.add(self)
-    }
-
-    // MARK: - SKPaymentTransactionObserver
-
-    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
-        // Ensure that all calls happen on main queue because StoreKit does not guarantee on which queue the delegate
-        // will be invoked.
-        DispatchQueue.main.async {
-            self.handleTransactions(transactions)
-        }
+        logger.debug("Listen for transactions.")
+        _ = listenForTransactions()
     }
 
     // MARK: - Payment observation
@@ -106,28 +77,6 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
 
     // MARK: - Products and payments
 
-    /// Fetch products from AppStore using product identifiers.
-    ///
-    /// - Parameters:
-    ///   - productIdentifiers: a set of product identifiers.
-    ///   - completionHandler: completion handler. Invoked on main queue.
-    /// - Returns: the request cancellation token
-    func requestProducts(
-        with productIdentifiers: Set<StoreSubscription>,
-        completionHandler: @escaping (Result<SKProductsResponse, Error>) -> Void
-    ) -> Cancellable {
-        let productIdentifiers = productIdentifiers.productIdentifiersSet
-        let operation = ProductsRequestOperation(
-            productIdentifiers: productIdentifiers,
-            completionHandler: completionHandler
-        )
-        operation.addCondition(MutuallyExclusive(category: OperationCategory.productsRequest))
-
-        operationQueue.addOperation(operation)
-
-        return operation
-    }
-
     /// Add payment and associate it with the account number.
     ///
     /// Validates the user account with backend before adding the payment to the queue.
@@ -138,59 +87,34 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
     func addPayment(_ product: Product, for accountNumber: String)  {
         logger.debug("Validating account before the purchase.")
 
-        // Validate account token before adding new payment to the queue.
         Task {
+            // Validate account token before adding new payment to the queue.
             let error = await withCheckedContinuation { continuation in
                 validateAccount(accountNumber: accountNumber) { error in
                     continuation.resume(returning: error)
                 }
             }
 
-            if let error {
-                self.logger.error("Failed to validate the account. Payment is ignored.")
+            guard error == nil else {
+                self.logger.error("Failed to validate the account. Error: \n\(String(describing: error))")
+                return
+            }
 
-                let event = StorePaymentEvent.failure(
-                    StorePaymentFailure(
-                        transaction: nil,
-                        //                        payment: payment,
-                        accountNumber: accountNumber,
-                        error: error
-                    )
-                )
+            self.logger.debug("Starting purchase flow.")
+            let appAccountToken = UUID()
+            print(appAccountToken)
+            let purchaseResult = try await product.purchase(options: [.appAccountToken(appAccountToken)])
 
-                self.observerList.notify { observer in
-                    observer.storePaymentManager(self, didReceiveEvent: event)
-                }
-            } else {
-                self.logger.debug("Starting purchase flow.")
-                let result = try await product.purchase()
+            switch purchaseResult {
+            case .success(let verificationResult):
+                let transaction = try checkVerification(verificationResult)
+                print(transaction.appAccountToken)
+            case .pending, .userCancelled:
+                break
+            default:
+                break
             }
         }
-
-//        validateAccount(accountNumber: accountNumber) { error in
-//            if let error {
-//                self.logger.error("Failed to validate the account. Payment is ignored.")
-//
-//                let event = StorePaymentEvent.failure(
-//                    StorePaymentFailure(
-//                        transaction: nil,
-////                        payment: payment,
-//                        accountNumber: accountNumber,
-//                        error: error
-//                    )
-//                )
-//
-//                self.observerList.notify { observer in
-//                    observer.storePaymentManager(self, didReceiveEvent: event)
-//                }
-//            } else {
-//                self.logger.debug("Add payment to the queue.")
-//
-//                let result = try await product.purchase()
-////                self.associateAccountNumber(accountNumber, and: payment)
-////                self.paymentQueue.add(payment)
-//            }
-//        }
     }
 
     /// Restore purchases by sending the AppStore receipt to backend.
@@ -199,50 +123,15 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
     ///   - accountNumber: the account number to credit.
     ///   - completionHandler: completion handler invoked on the main queue.
     /// - Returns: the request cancellation token.
-    func restorePurchases(
-        for accountNumber: String,
-        completionHandler: @escaping (Result<REST.CreateApplePaymentResponse, Error>) -> Void
-    ) -> Cancellable {
-        logger.debug("Restore purchases.")
-
-        return sendStoreReceipt(
-            accountNumber: accountNumber,
-            forceRefresh: true,
-            completionHandler: completionHandler
-        )
-    }
+//    func restorePurchases(
+//        completionHandler: @escaping (Result<REST.CreateApplePaymentResponse, Error>) -> Void
+//    ) -> Cancellable {
+//        logger.debug("Restore purchases.")
+//
+////        AppStore.sync()
+//    }
 
     // MARK: - Private methods
-
-    /// Associate account number with the payment object.
-    ///
-    /// - Parameters:
-    ///   - accountNumber: the account number that should be credited with the payment.
-    ///   - payment: the payment object.
-    private func associateAccountNumber(_ accountNumber: String, and payment: SKPayment) {
-        dispatchPrecondition(condition: .onQueue(.main))
-
-        paymentToAccountToken[payment] = accountNumber
-    }
-
-    /// Remove association between the payment object and the account number.
-    ///
-    /// Since the association between account numbers and payments is not persisted, this method may consult the delegate to provide the account number to
-    /// credit. This can happen for dangling transactions that remain in the payment queue between the application restarts. In the future this association should be
-    /// solved by using `SKPaymentQueue.applicationUsername`.
-    ///
-    /// - Parameter payment: the payment object.
-    /// - Returns: The account number on success, otherwise `nil`.
-    private func deassociateAccountNumber(_ payment: SKPayment) -> String? {
-        dispatchPrecondition(condition: .onQueue(.main))
-
-        if let accountToken = paymentToAccountToken[payment] {
-            paymentToAccountToken.removeValue(forKey: payment)
-            return accountToken
-        } else {
-            return delegate?.storePaymentManager(self, didRequestAccountTokenFor: payment)
-        }
-    }
 
     /// Validate account number.
     ///
@@ -272,6 +161,28 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
         }
 
         operationQueue.addOperation(accountOperation)
+    }
+
+    private func listenForTransactions() -> Task<Void, Error> {
+        return Task.detached { [weak self] in
+            // Iterate through any transactions that don't come from a direct call to `purchase()`.
+            for await result in Transaction.updates {
+                let transaction = try self?.checkVerification(result)
+                // TODO: Update purchases.
+
+                await transaction?.finish()
+            }
+        }
+    }
+
+    private func checkVerification<T>(_ result: VerificationResult<T>) throws -> T {
+        switch  result {
+        case .verified(let transaction):
+            return transaction
+        case .unverified(_, let verificationError):
+            logger.error("Could not verify transaction: \(verificationError.localizedDescription)")
+            throw verificationError
+        }
     }
 
     /// Send the AppStore receipt stored on device to the backend.
@@ -308,185 +219,4 @@ final class StorePaymentManager: NSObject, SKPaymentTransactionObserver {
 
         return operation
     }
-
-    /// Handles an array of StoreKit transactions.
-    /// - Parameter transactions: an array of transactions
-    private func handleTransactions(_ transactions: [SKPaymentTransaction]) {
-        transactions.forEach { transaction in
-            handleTransaction(transaction)
-        }
-    }
-
-    /// Handle single StoreKit transaction.
-    /// - Parameter transaction: a transaction
-    private func handleTransaction(_ transaction: SKPaymentTransaction) {
-        switch transaction.transactionState {
-        case .deferred:
-            logger.info("Deferred \(transaction.payment.productIdentifier)")
-
-        case .failed:
-            let transactionError = transaction.error?.localizedDescription ?? "No error"
-            logger.error("Failed to purchase \(transaction.payment.productIdentifier): \(transactionError)")
-
-            didFailPurchase(transaction: transaction)
-
-        case .purchased:
-            logger.info("Purchased \(transaction.payment.productIdentifier)")
-
-            didFinishOrRestorePurchase(transaction: transaction)
-
-        case .purchasing:
-            logger.info("Purchasing \(transaction.payment.productIdentifier)")
-
-        case .restored:
-            logger.info("Restored \(transaction.payment.productIdentifier)")
-
-            didFinishOrRestorePurchase(transaction: transaction)
-
-        @unknown default:
-            logger.warning("Unknown transactionState = \(transaction.transactionState.rawValue)")
-        }
-    }
-
-    /// Handle failed transaction by finishing it and notifying the observers.
-    ///
-    /// - Parameter transaction: the failed transaction.
-    private func didFailPurchase(transaction: SKPaymentTransaction) {
-        paymentQueue.finishTransaction(transaction)
-
-        let paymentFailure = if let accountToken = deassociateAccountNumber(transaction.payment) {
-            StorePaymentFailure(
-                transaction: transaction,
-//                payment: transaction.payment,
-                accountNumber: accountToken,
-                error: .storePayment(transaction.error!)
-            )
-        } else {
-            StorePaymentFailure(
-                transaction: transaction,
-//                payment: transaction.payment,
-                accountNumber: nil,
-                error: .noAccountSet
-            )
-        }
-
-        observerList.notify { observer in
-            observer.storePaymentManager(self, didReceiveEvent: .failure(paymentFailure))
-        }
-    }
-
-    /// Handle successful transaction that's in purchased or restored state.
-    ///
-    /// - Consults with transaction log before handling the transaction. Transactions that are already processed are removed from the payment queue,
-    ///   observers are not notified as they had already received the corresponding events.
-    /// - Keeps transaction in the queue if association between transaction payment and account number cannot be established. Notifies observers with the error.
-    /// - Sends the AppStore receipt to backend.
-    ///
-    /// - Parameter transaction: the transaction that's in purchased or restored state.
-    private func didFinishOrRestorePurchase(transaction: SKPaymentTransaction) {
-        // Obtain transaction identifier which must be set on transactions with purchased or restored state.
-        guard let transactionIdentifier = transaction.transactionIdentifier else {
-            logger.warning("Purchased or restored transaction does not contain a transaction identifier!")
-            return
-        }
-
-        // Check if transaction is already processed.
-        guard !transactionLog.contains(transactionIdentifier: transactionIdentifier) else {
-            logger.debug("Found transaction that is already processed.")
-            paymentQueue.finishTransaction(transaction)
-            return
-        }
-
-        // Find the account number associated with the payment.
-        guard let accountNumber = deassociateAccountNumber(transaction.payment) else {
-            logger.debug("Cannot locate the account associated with the purchase. Keep transaction in the queue.")
-
-            let event = StorePaymentEvent.failure(
-                StorePaymentFailure(
-                    transaction: transaction,
-//                    payment: transaction.payment,
-                    accountNumber: nil,
-                    error: .noAccountSet
-                )
-            )
-
-            observerList.notify { observer in
-                observer.storePaymentManager(self, didReceiveEvent: event)
-            }
-            return
-        }
-
-        // Send the AppStore receipt to the backend.
-        _ = sendStoreReceipt(accountNumber: accountNumber, forceRefresh: false) { result in
-            self.didSendStoreReceipt(
-                accountNumber: accountNumber,
-                transactionIdentifier: transactionIdentifier,
-                transaction: transaction,
-                result: result
-            )
-        }
-    }
-
-    /// Handles the result of uploading the AppStore receipt to the backend.
-    ///
-    /// If the server response is successful, this function adds the transaction identifier to the transaction log to make sure that the same transaction is not
-    /// processed twice, then finishes the transaction.
-    ///
-    /// This is important because the call to `SKPaymentQueue.finishTransaction()` may fail, causing the same transaction to re-appear on the payment
-    /// queue. Since the transaction was already processed, no action needs to be performed besides another attempt to finish it and hopefully remove it from
-    /// the payment queue for good.
-    ///
-    /// If the server response indicates an error, then this function keeps the transaction in the payment queue in order to process it again later.
-    ///
-    /// Finally, the ``StorePaymentEvent`` is produced and dispatched to observers to notify them on the progress.
-    ///
-    /// - Parameters:
-    ///   - accountNumber: the account number to credit
-    ///   - transactionIdentifier: the transaction identifier
-    ///   - transaction: the transaction object
-    ///   - result: the result of uploading the AppStore receipt to the backend.
-    private func didSendStoreReceipt(
-        accountNumber: String,
-        transactionIdentifier: String,
-        transaction: SKPaymentTransaction,
-        result: Result<REST.CreateApplePaymentResponse, Error>
-    ) {
-        var event: StorePaymentEvent?
-
-        switch result {
-        case let .success(response):
-            // Save transaction identifier to transaction log to identify it later if it resurrects on the payment queue.
-            transactionLog.add(transactionIdentifier: transactionIdentifier)
-
-            // Finish transaction to remove it from the payment queue.
-            paymentQueue.finishTransaction(transaction)
-
-            event = StorePaymentEvent.finished(StorePaymentCompletion(
-                transaction: transaction,
-                accountNumber: accountNumber,
-                serverResponse: response
-            ))
-
-        case let .failure(error as StorePaymentManagerError):
-            logger.debug("Failed to upload the receipt. Keep transaction in the queue.")
-
-            event = StorePaymentEvent.failure(StorePaymentFailure(
-                transaction: transaction,
-//                payment: transaction.payment,
-                accountNumber: accountNumber,
-                error: error
-            ))
-
-        default:
-            break
-        }
-
-        if let event {
-            observerList.notify { observer in
-                observer.storePaymentManager(self, didReceiveEvent: event)
-            }
-        }
-    }
 }
-
-// swiftlint:disable:this file_length

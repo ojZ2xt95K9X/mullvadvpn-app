@@ -78,19 +78,15 @@ final class WelcomeInteractor {
     }
 
     private func requestAccessToStore() {
-        if !StorePaymentManager.canMakePayments {
-            didChangeInAppPurchaseState?(.cannotMakePurchases)
-        } else {
-            let product = StoreSubscription.thirtyDays
-            didChangeInAppPurchaseState?(.fetching(product))
-            _ = storePaymentManager.requestProducts(with: [product]) { [weak self] result in
-                guard let self else { return }
-                let product = result.value?.products.first
-                let productState: ProductState = product.map { .received($0) } ?? .failed
-                didChangeInAppPurchaseState?(productState)
-                self.product = product
-            }
-        }
+        let product = StoreSubscription.thirtyDays
+        didChangeInAppPurchaseState?(.fetching(product))
+//        _ = storePaymentManager.requestProducts(with: [product]) { [weak self] result in
+//            guard let self else { return }
+//            let product = result.value?.products.first
+//            let productState: ProductState = product.map { .received($0) } ?? .failed
+//            didChangeInAppPurchaseState?(productState)
+//            self.product = product
+//        }
     }
 
     private func startAccountUpdateTimer() {

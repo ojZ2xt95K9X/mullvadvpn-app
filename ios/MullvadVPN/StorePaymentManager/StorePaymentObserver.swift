@@ -11,6 +11,6 @@ import Foundation
 protocol StorePaymentObserver: AnyObject {
     func storePaymentManager(
         _ manager: StorePaymentManager,
-        didReceiveEvent event: StorePaymentEvent
+        didCompletePayment paymentCompletion: StorePaymentCompletion
     )
 }

@@ -23,24 +23,9 @@ class InAppPurchaseInteractor {
 
     init(storePaymentManager: StorePaymentManager) {
         self.storePaymentManager = storePaymentManager
-        self.addObservers()
-    }
-
-    private func addObservers() {
-        let paymentObserver = StorePaymentBlockObserver { [weak self] _, event in
-            guard let self else { return }
-            viewControllerDelegate?.didEndPayment()
-            didFinishPayment?(self, event)
-        }
-
-        storePaymentManager.addPaymentObserver(paymentObserver)
-
-        self.paymentObserver = paymentObserver
     }
 
     func purchase(accountNumber: String, product: Product) {
-//        let payment = SKPayment(product: product)
         storePaymentManager.addPayment(product, for: accountNumber)
-//        viewControllerDelegate?.didBeginPayment()
     }
 }

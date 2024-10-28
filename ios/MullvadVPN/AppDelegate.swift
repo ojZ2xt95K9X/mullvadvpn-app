@@ -19,7 +19,7 @@ import UIKit
 import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate, StorePaymentManagerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     private var logger: Logger!
 
     #if targetEnvironment(simulator)
@@ -105,10 +105,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
         storePaymentManager = StorePaymentManager(
             backgroundTaskProvider: application,
-            queue: .default(),
             apiProxy: apiProxy,
-            accountsProxy: accountsProxy,
-            transactionLog: .default
+            accountsProxy: accountsProxy
         )
         let urlSessionTransport = URLSessionTransport(urlSession: REST.makeURLSession(addressCache: addressCache))
         let shadowsocksCache = ShadowsocksConfigurationCache(cacheDirectory: containerURL)
@@ -145,7 +143,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         setUpSimulatorHost(transportProvider: transportProvider, relaySelector: relaySelector)
 
         registerBackgroundTasks()
-        setupPaymentHandler()
         setupNotifications()
         addApplicationNotifications(application: application)
 
@@ -422,11 +419,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         )
     }
 
-    private func setupPaymentHandler() {
-        storePaymentManager.delegate = self
-        storePaymentManager.addPaymentObserver(tunnelManager)
-    }
-
     private func setupNotifications() {
         NotificationManager.shared.notificationProviders = [
             TunnelStatusNotificationProvider(tunnelManager: tunnelManager),
@@ -560,15 +552,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             FirstTimeLaunch.setHasFinished()
             SettingsManager.setShouldWipeSettings()
         }
-    }
-
-    // MARK: - StorePaymentManagerDelegate
-
-    func storePaymentManager(_ manager: StorePaymentManager, didRequestAccountTokenFor payment: SKPayment) -> String? {
-        // Since we do not persist the relation between payment and account number between the
-        // app launches, we assume that all successful purchases belong to the active account
-        // number.
-        tunnelManager.deviceState.accountData?.number
     }
 
     // MARK: - UNUserNotificationCenterDelegate

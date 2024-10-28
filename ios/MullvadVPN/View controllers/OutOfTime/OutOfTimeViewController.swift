@@ -103,11 +103,7 @@ class OutOfTimeViewController: UIViewController, RootContainment {
             self?.applyViewState()
         }
 
-        if StorePaymentManager.canMakePayments {
-            requestStoreProducts()
-        } else {
-            productState = .cannotMakePurchases
-        }
+        requestStoreProducts()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -127,12 +123,12 @@ class OutOfTimeViewController: UIViewController, RootContainment {
 
         productState = .fetching(productKind)
 
-        _ = interactor.requestProducts(with: [productKind]) { [weak self] completion in
-            let productState: ProductState = completion.value?.products.first
-                .map { .received($0) } ?? .failed
-
-            self?.productState = productState
-        }
+//        _ = interactor.requestProducts(with: [productKind]) { [weak self] completion in
+//            let productState: ProductState = completion.value?.products.first
+//                .map { .received($0) } ?? .failed
+//
+//            self?.productState = productState
+//        }
     }
 
     private func applyViewState() {
@@ -200,26 +196,26 @@ class OutOfTimeViewController: UIViewController, RootContainment {
     }
 
     private func didReceivePaymentEvent(_ event: StorePaymentEvent) {
-        guard case let .makingPayment(payment) = paymentState,
-              payment == event.payment else { return }
-
-        switch event {
-        case let .finished(completion):
-            errorPresenter.showAlertForResponse(completion.serverResponse, context: .purchase)
-
-        case let .failure(paymentFailure):
-            switch paymentFailure.error {
-            case .storePayment(SKError.paymentCancelled):
-                break
-
-            default:
-                errorPresenter.showAlertForError(paymentFailure.error, context: .purchase) {
-                    self.paymentState = .none
-                }
-            }
-        }
-
-        paymentState = .none
+//        guard case let .makingPayment(payment) = paymentState,
+//              payment == event.payment else { return }
+//
+//        switch event {
+//        case let .finished(completion):
+//            errorPresenter.showAlertForResponse(completion.serverResponse, context: .purchase)
+//
+//        case let .failure(paymentFailure):
+//            switch paymentFailure.error {
+//            case .storePayment(SKError.paymentCancelled):
+//                break
+//
+//            default:
+//                errorPresenter.showAlertForError(paymentFailure.error, context: .purchase) {
+//                    self.paymentState = .none
+//                }
+//            }
+//        }
+//
+//        paymentState = .none
     }
 
     // MARK: - Actions
@@ -247,24 +243,24 @@ class OutOfTimeViewController: UIViewController, RootContainment {
 
         paymentState = .restoringPurchases
 
-        _ = interactor.restorePurchases(for: accountData.number) { [weak self] result in
-            guard let self else { return }
-
-            switch result {
-            case let .success(response):
-                errorPresenter.showAlertForResponse(response, context: .restoration) {
-                    self.paymentState = .none
-                }
-
-            case let .failure(error as StorePaymentManagerError):
-                errorPresenter.showAlertForError(error, context: .restoration) {
-                    self.paymentState = .none
-                }
-
-            default:
-                paymentState = .none
-            }
-        }
+//        _ = interactor.restorePurchases(for: accountData.number) { [weak self] result in
+//            guard let self else { return }
+//
+//            switch result {
+//            case let .success(response):
+//                errorPresenter.showAlertForResponse(response, context: .restoration) {
+//                    self.paymentState = .none
+//                }
+//
+//            case let .failure(error as StorePaymentManagerError):
+//                errorPresenter.showAlertForError(error, context: .restoration) {
+//                    self.paymentState = .none
+//                }
+//
+//            default:
+//                paymentState = .none
+//            }
+//        }
     }
 
     @objc private func handleDisconnect(_ sender: Any) {

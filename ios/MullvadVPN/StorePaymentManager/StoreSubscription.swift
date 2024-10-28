@@ -26,9 +26,9 @@ enum StoreSubscription: String {
     }
 }
 
-extension SKProduct {
+extension Product {
     var customLocalizedTitle: String? {
-        StoreSubscription(rawValue: productIdentifier)?.localizedTitle
+        StoreSubscription(rawValue: id)?.localizedTitle
     }
 }
 

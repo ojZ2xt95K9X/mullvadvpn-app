@@ -22,7 +22,7 @@ final class AccountInteractor {
     var didReceiveDeviceState: ((DeviceState) -> Void)?
 
     private var tunnelObserver: TunnelObserver?
-    private var paymentObserver: StorePaymentObserver?
+//    private var paymentObserver: StorePaymentObserver?
 
     init(
         storePaymentManager: StorePaymentManager,
@@ -38,15 +38,14 @@ final class AccountInteractor {
                 self?.didReceiveDeviceState?(deviceState)
             })
 
-        let paymentObserver = StorePaymentBlockObserver { [weak self] _, event in
-            self?.didReceivePaymentEvent?(event)
-        }
+//        let paymentObserver = StorePaymentBlockObserver { [weak self] _, event in
+//            self?.didReceivePaymentEvent?(event)
+//        }
 
         tunnelManager.addObserver(tunnelObserver)
-        storePaymentManager.addPaymentObserver(paymentObserver)
 
         self.tunnelObserver = tunnelObserver
-        self.paymentObserver = paymentObserver
+//        self.paymentObserver = paymentObserver
     }
 
     var deviceState: DeviceState {
@@ -61,23 +60,19 @@ final class AccountInteractor {
         storePaymentManager.addPayment(product, for: accountNumber)
     }
 
-    func restorePurchases(
-        for accountNumber: String,
-        completionHandler: @escaping (Result<REST.CreateApplePaymentResponse, Error>) -> Void
-    ) -> Cancellable {
-        storePaymentManager.restorePurchases(
-            for: accountNumber,
-            completionHandler: completionHandler
-        )
-    }
-
-    func requestProducts(
-        with productIdentifiers: Set<StoreSubscription>,
-        completionHandler: @escaping (Result<SKProductsResponse, Error>) -> Void
-    ) -> Cancellable {
-        storePaymentManager.requestProducts(
-            with: productIdentifiers,
-            completionHandler: completionHandler
-        )
-    }
+//    func restorePurchases(
+//        completionHandler: @escaping (Result<REST.CreateApplePaymentResponse, Error>) -> Void
+//    ) -> Cancellable {
+//        storePaymentManager.restorePurchases(completionHandler: completionHandler)
+//    }
+//
+//    func requestProducts(
+//        with productIdentifiers: Set<StoreSubscription>,
+//        completionHandler: @escaping (Result<SKProductsResponse, Error>) -> Void
+//    ) -> Cancellable {
+//        storePaymentManager.requestProducts(
+//            with: productIdentifiers,
+//            completionHandler: completionHandler
+//        )
+//    }
 }

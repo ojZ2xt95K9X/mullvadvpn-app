@@ -39,7 +39,7 @@ enum ProductState {
             return subscription.localizedTitle
 
         case let .received(product):
-            let localizedTitle = product.customLocalizedTitle ?? ""
+            let localizedTitle = product.localizedTitle
             let localizedPrice = product.localizedPrice ?? ""
 
             let format = NSLocalizedString(

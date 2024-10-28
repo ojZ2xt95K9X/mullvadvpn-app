@@ -107,11 +107,7 @@ class AccountViewController: UIViewController {
     // MARK: - Private
 
     private func requestStoreProductsIfCan() {
-        if StorePaymentManager.canMakePayments {
-            requestStoreProducts()
-        } else {
-            setProductState(.cannotMakePurchases, animated: false)
-        }
+        requestStoreProducts()
     }
 
     private func configUI() {
@@ -151,12 +147,12 @@ class AccountViewController: UIViewController {
 
         setProductState(.fetching(productKind), animated: true)
 
-        _ = interactor.requestProducts(with: [productKind]) { [weak self] completion in
-            let productState: ProductState = completion.value?.products.first
-                .map { .received($0) } ?? .failed
-
-            self?.setProductState(productState, animated: true)
-        }
+//        _ = interactor.requestProducts(with: [productKind]) { [weak self] completion in
+//            let productState: ProductState = completion.value?.products.first
+//                .map { .received($0) } ?? .failed
+//
+//            self?.setProductState(productState, animated: true)
+//        }
     }
 
     private func setPaymentState(_ newState: PaymentState, animated: Bool) {
@@ -211,24 +207,24 @@ class AccountViewController: UIViewController {
     }
 
     private func didReceivePaymentEvent(_ event: StorePaymentEvent) {
-        guard case let .makingPayment(payment) = paymentState,
-              payment == event.payment else { return }
-
-        switch event {
-        case let .finished(completion):
-            errorPresenter.showAlertForResponse(completion.serverResponse, context: .purchase)
-
-        case let .failure(paymentFailure):
-            switch paymentFailure.error {
-            case .storePayment(SKError.paymentCancelled):
-                break
-
-            default:
-                errorPresenter.showAlertForError(paymentFailure.error, context: .purchase)
-            }
-        }
-
-        setPaymentState(.none, animated: true)
+//        guard case let .makingPayment(payment) = paymentState,
+//              payment == event.payment else { return }
+//
+//        switch event {
+//        case let .finished(completion):
+//            errorPresenter.showAlertForResponse(completion.serverResponse, context: .purchase)
+//
+//        case let .failure(paymentFailure):
+//            switch paymentFailure.error {
+//            case .storePayment(SKError.paymentCancelled):
+//                break
+//
+//            default:
+//                errorPresenter.showAlertForError(paymentFailure.error, context: .purchase)
+//            }
+//        }
+//
+//        setPaymentState(.none, animated: true)
     }
 
     private func copyAccountToken() {
@@ -279,26 +275,26 @@ class AccountViewController: UIViewController {
     }
 
     @objc private func restorePurchases() {
-        guard let accountData = interactor.deviceState.accountData else {
-            return
-        }
+//        guard let accountData = interactor.deviceState.accountData else {
+//            return
+//        }
 
         setPaymentState(.restoringPurchases, animated: true)
-        _ = interactor.restorePurchases(for: accountData.number) { [weak self] completion in
-            guard let self else { return }
-
-            switch completion {
-            case let .success(response):
-                errorPresenter.showAlertForResponse(response, context: .restoration)
-
-            case let .failure(error as StorePaymentManagerError):
-                errorPresenter.showAlertForError(error, context: .restoration)
-
-            default:
-                break
-            }
-
-            setPaymentState(.none, animated: true)
-        }
+//        _ = interactor.restorePurchases(for: accountData.number) { [weak self] completion in
+//            guard let self else { return }
+//
+//            switch completion {
+//            case let .success(response):
+//                errorPresenter.showAlertForResponse(response, context: .restoration)
+//
+//            case let .failure(error as StorePaymentManagerError):
+//                errorPresenter.showAlertForError(error, context: .restoration)
+//
+//            default:
+//                break
+//            }
+//
+//            setPaymentState(.none, animated: true)
+//        }
     }
 }

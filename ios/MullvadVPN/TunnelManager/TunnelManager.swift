@@ -562,21 +562,15 @@ final class TunnelManager: StorePaymentObserver {
 
     func storePaymentManager(
         _ manager: StorePaymentManager,
-        didReceiveEvent event: StorePaymentEvent
+        didCompletePayment paymentCompletion: StorePaymentCompletion
     ) {
-        guard case let .finished(paymentCompletion) = event else {
-            return
-        }
-
         scheduleDeviceStateUpdate(
             taskName: "Update account expiry after in-app purchase",
             modificationBlock: { deviceState in
                 switch deviceState {
                 case .loggedIn(var accountData, let deviceData):
-                    if accountData.number == paymentCompletion.accountNumber {
-                        accountData.expiry = paymentCompletion.serverResponse.newExpiry
-                        deviceState = .loggedIn(accountData, deviceData)
-                    }
+                    accountData.expiry = paymentCompletion.serverResponse.newExpiry
+                    deviceState = .loggedIn(accountData, deviceData)
 
                 case .loggedOut, .revoked:
                     break
