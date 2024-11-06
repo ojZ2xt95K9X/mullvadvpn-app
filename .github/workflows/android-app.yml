@@ -94,16 +94,25 @@ jobs:
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
-      # - uses: Swatinem/rust-cache@v2
-      #   with:
-      #     prefix-key: "v0-rust-android"
-      #     cache-all-crates: "true"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v0-rust-android"
+          cache-all-crates: "true"
 
       - name: Build native
         run: ./build-apk.sh --dev-build --skip-apk
 
       - name: Build debug app
-        run: android/gradlew -p android assembleOssProdDebug
+        uses: burrunan/gradle-cache-action@v1
+        with:
+          job-id: jdk17-caching-test
+          arguments: assembleOssProdDebug
+          gradle-version: wrapper
+          build-root-directory: android
+          execution-only-caches: false
+          # Disable if logs are hard to follow.
+          concurrent: true
+          read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Upload apks
         # Using v3 due to v4 being very slow for this artifact.
