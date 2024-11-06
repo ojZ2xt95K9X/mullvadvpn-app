@@ -94,10 +94,10 @@ jobs:
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: "v0-rust-android"
-          cache-all-crates: "true"
+      # - uses: Swatinem/rust-cache@v2
+      #   with:
+      #     prefix-key: "v0-rust-android"
+      #     cache-all-crates: "true"
 
       - name: Build native
         run: ./build-apk.sh --dev-build --skip-apk
