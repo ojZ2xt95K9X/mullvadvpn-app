@@ -16,6 +16,8 @@ GRADLE_BUILD_TYPE="release"
 GRADLE_TASKS=(createOssProdReleaseDistApk createPlayProdReleaseDistApk)
 BUNDLE_TASKS=(createPlayProdReleaseDistBundle)
 CARGO_ARGS=( "--release" )
+BUILD_APK="yes"
+BUILD_DAEMON="yes"
 BUILD_BUNDLE="no"
 CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-"target"}
 SKIP_STRIPPING=${SKIP_STRIPPING:-"no"}
@@ -31,6 +33,10 @@ while [ -n "${1:-""}" ]; do
         GRADLE_BUILD_TYPE="fdroid"
         GRADLE_TASKS=(createOssProdFdroidDistApk)
         BUNDLE_TASKS=(createOssProdFdroidDistBundle)
+    elif [[ "${1:-""}" == "--skip-apk" ]]; then
+        BUILD_APK="no"
+    elif [[ "${1:-""}" == "--skip-daemon" ]]; then
+        BUILD_DAEMON="no"
     elif [[ "${1:-""}" == "--app-bundle" ]]; then
         BUILD_BUNDLE="yes"
     elif [[ "${1:-""}" == "--skip-stripping" ]]; then
@@ -77,51 +83,59 @@ mkdir -p "app/build/extraAssets"
 mkdir -p "app/build/extraJni"
 popd
 
-for ARCHITECTURE in ${ARCHITECTURES:-aarch64}; do
-    case "$ARCHITECTURE" in
-        "x86_64")
-            TARGET="x86_64-linux-android"
-            ABI="x86_64"
-            ;;
-        "i686")
-            TARGET="i686-linux-android"
-            ABI="x86"
-            ;;
-        "aarch64")
-            TARGET="aarch64-linux-android"
-            ABI="arm64-v8a"
-            ;;
-        "armv7")
-            TARGET="armv7-linux-androideabi"
-            ABI="armeabi-v7a"
-            ;;
-    esac
+if [[ "$BUILD_DAEMON" == "yes" ]]; then
+    for ARCHITECTURE in ${ARCHITECTURES:-aarch64}; do
+        case "$ARCHITECTURE" in
+            "x86_64")
+                TARGET="x86_64-linux-android"
+                ABI="x86_64"
+                ;;
+            "i686")
+                TARGET="i686-linux-android"
+                ABI="x86"
+                ;;
+            "aarch64")
+                TARGET="aarch64-linux-android"
+                ABI="arm64-v8a"
+                ;;
+            "armv7")
+                TARGET="armv7-linux-androideabi"
+                ABI="armeabi-v7a"
+                ;;
+        esac
 
-    echo "Building mullvad-daemon for $TARGET"
-    cargo build "${CARGO_ARGS[@]}" --target "$TARGET" --package mullvad-jni
+        echo "Building mullvad-daemon for $TARGET"
+        cargo build "${CARGO_ARGS[@]}" --target "$TARGET" --package mullvad-jni
 
-    STRIP_TOOL="${NDK_TOOLCHAIN_DIR}/llvm-strip"
-    TARGET_LIB_PATH="$SCRIPT_DIR/android/app/build/extraJni/$ABI/libmullvad_jni.so"
-    UNSTRIPPED_LIB_PATH="$CARGO_TARGET_DIR/$TARGET/$BUILD_TYPE/libmullvad_jni.so"
+        STRIP_TOOL="${NDK_TOOLCHAIN_DIR}/llvm-strip"
+        TARGET_LIB_PATH="$SCRIPT_DIR/android/app/build/extraJni/$ABI/libmullvad_jni.so"
+        UNSTRIPPED_LIB_PATH="$CARGO_TARGET_DIR/$TARGET/$BUILD_TYPE/libmullvad_jni.so"
 
-    if [[ "$SKIP_STRIPPING" == "yes" ]]; then
-        cp "$UNSTRIPPED_LIB_PATH" "$TARGET_LIB_PATH"
-    else
-        $STRIP_TOOL --strip-debug --strip-unneeded -o "$TARGET_LIB_PATH" "$UNSTRIPPED_LIB_PATH"
-    fi
-done
+        if [[ "$SKIP_STRIPPING" == "yes" ]]; then
+            cp "$UNSTRIPPED_LIB_PATH" "$TARGET_LIB_PATH"
+        else
+            $STRIP_TOOL --strip-debug --strip-unneeded -o "$TARGET_LIB_PATH" "$UNSTRIPPED_LIB_PATH"
+        fi
+    done
 
-echo "Updating relays.json..."
-cargo run --bin relay_list "${CARGO_ARGS[@]}" > android/app/build/extraAssets/relays.json
+    echo "Updating relays.json..."
+    cargo run --bin relay_list "${CARGO_ARGS[@]}" > android/app/build/extraAssets/relays.json
 
-echo "Copying maybenot machines..."
-cp dist-assets/maybenot_machines_v2 android/app/build/extraAssets/
+    echo "Copying maybenot machines..."
+    cp dist-assets/maybenot_machines_v2 android/app/build/extraAssets/
+fi
 
-cd "$SCRIPT_DIR/android"
-$GRADLE_CMD --console plain "${GRADLE_TASKS[@]}"
+
+if [[ "$BUILD_APK" == "yes" ]]; then
+    pushd "$SCRIPT_DIR/android"
+    $GRADLE_CMD --console plain "${GRADLE_TASKS[@]}"
+    popd
+fi
 
 if [[ "$BUILD_BUNDLE" == "yes" ]]; then
+    pushd "$SCRIPT_DIR/android"
     $GRADLE_CMD --console plain "${BUNDLE_TASKS[@]}"
+    popd
 fi
 
 echo "**********************************"

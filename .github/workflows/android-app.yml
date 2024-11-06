@@ -94,8 +94,11 @@ jobs:
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
+      - name: Build native
+        run: ./build-apk.sh --dev-build --skip-apk
+
       - name: Build debug app
-        run: ./build-apk.sh --dev-build
+        run: android/gradlew -p android assembleOssProdDebug
 
       - name: Upload apks
         # Using v3 due to v4 being very slow for this artifact.
