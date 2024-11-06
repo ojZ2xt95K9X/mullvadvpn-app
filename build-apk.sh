@@ -78,7 +78,7 @@ else
     exit 2
 fi
 
-$GRADLE_CMD --console plain clean
+#$GRADLE_CMD --console plain clean
 mkdir -p "app/build/extraAssets"
 mkdir -p "app/build/extraJni"
 popd
