@@ -53,37 +53,10 @@ on:
 permissions: {}
 
 jobs:
-  prepare:
-    name: Prepare
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use custom container image if specified
-        if: ${{ github.event.inputs.override_container_image != '' }}
-        run: echo "inner_container_image=${{ github.event.inputs.override_container_image }}"
-          >> $GITHUB_ENV
-
-      - name: Use default container image and resolve digest
-        if: ${{ github.event.inputs.override_container_image == '' }}
-        run: |
-          echo "inner_container_image=$(cat ./building/android-container-image.txt)" >> $GITHUB_ENV
-    outputs:
-      container_image: ${{ env.inner_container_image }}
-
   build-app:
     name: Build app
-    needs: [prepare]
     runs-on: ubuntu-latest
-    container:
-      image: ${{ needs.prepare.outputs.container_image }}
     steps:
-      # Fix for HOME path overridden by GH runners when building in containers, see:
-      # https://github.com/actions/runner/issues/863
-      - name: Fix HOME path
-        run: echo "HOME=/root" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -95,10 +68,10 @@ jobs:
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
       - name: Build native
-        run: ./build-apk.sh --dev-build --skip-apk
+        run: ./building/container-run.sh android ./build-apk.sh --dev-build --skip-apk
 
       - name: Build debug app
-        run: android/gradlew -p android assembleOssProdDebug
+        run: ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug
 
       - name: Upload apks
         # Using v3 due to v4 being very slow for this artifact.
