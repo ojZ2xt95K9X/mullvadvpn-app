@@ -7,8 +7,11 @@
 //
 
 import Foundation
+import Network
+import Logging
 
 extension PacketTunnelActor {
+    
     /// Assign a closure receiving tunnel monitor events.
     func setTunnelMonitorEventHandler() {
         tunnelMonitor.onEvent = { [weak self] event in
@@ -41,6 +44,7 @@ extension PacketTunnelActor {
             // Reset connection attempt once successfully connected.
             connState.connectionAttemptCount = 0
             state = .connected(connState)
+            
 
         case .initial, .connected, .disconnecting, .disconnected, .error, .negotiatingEphemeralPeer:
             break
@@ -56,5 +60,57 @@ extension PacketTunnelActor {
         case .initial, .disconnected, .disconnecting, .error, .negotiatingEphemeralPeer:
             break
         }
+    }
+}
+public class TcpSender {
+    private let conn: NWConnection
+    private var timer: Timer?
+    private let queue = DispatchQueue(label: "lol, lmau", qos: .userInteractive)
+    private let logger: Logger
+
+    init(interface: NWInterface?, logger: Logger) {
+        self.logger = logger
+        
+        let params = NWParameters.tcp
+        params.requiredInterface = interface
+
+        conn = NWConnection(host: "10.64.0.1", port: 1337, using: params)
+    }
+
+    public func start() {
+        conn.start(queue: queue)
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.sendData()
+        }
+        sendData()
+    }
+
+    private func sendData() {
+        let data = Data("hello sterver".utf8)
+        conn.receive(minimumIncompleteLength: 0, maximumLength: 1024, completion: { [weak self] data, context,isComplete, error in
+            
+            if let error {
+                self?.logger.debug("RECEIVE ERROR: \(error)")
+            } else {
+                self?.logger.debug("RECEIVED SOMETHING")
+            }
+            
+        })
+        conn.send(content: data, completion: .contentProcessed { error in
+            if let error = error {
+                print("Error sending data: \(error)")
+            }
+        })
+    }
+    
+    public func cancel() {
+        timer?.invalidate()
+        conn.cancel()
+    }
+
+    deinit {
+        timer?.invalidate()
+        conn.cancel()
     }
 }

@@ -85,7 +85,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         relaySelector = RelaySelectorWrapper(
             relayCache: ipOverrideWrapper
         )
-
+        
         actor = PacketTunnelActor(
             timings: PacketTunnelActorTimings(),
             tunnelAdapter: adapter,
@@ -97,7 +97,9 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
                 guard let self = self else { return }
                 tunnelSettingsListener.onNewSettings?(settings.tunnelSettings)
             },
-            protocolObfuscator: ProtocolObfuscator<UDPOverTCPObfuscator>()
+            protocolObfuscator: ProtocolObfuscator<UDPOverTCPObfuscator>(),
+            // virtualInterfaces is non-nill after calling startTunnel/setTunnelOptions
+            provider: self
         )
 
         let urlRequestProxy = URLRequestProxy(dispatchQueue: internalQueue, transportProvider: transportProvider)

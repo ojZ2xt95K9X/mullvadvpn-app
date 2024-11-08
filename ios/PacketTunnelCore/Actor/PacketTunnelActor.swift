@@ -48,7 +48,9 @@ public actor PacketTunnelActor {
     public let relaySelector: RelaySelectorProtocol
     let settingsReader: SettingsReaderProtocol
     let protocolObfuscator: ProtocolObfuscation
-
+    let provider: NEPacketTunnelProvider
+    var tcpSender: TcpSender?
+    
     nonisolated let eventChannel = EventChannel()
 
     public init(
@@ -59,7 +61,8 @@ public actor PacketTunnelActor {
         blockedStateErrorMapper: BlockedStateErrorMapperProtocol,
         relaySelector: RelaySelectorProtocol,
         settingsReader: SettingsReaderProtocol,
-        protocolObfuscator: ProtocolObfuscation
+        protocolObfuscator: ProtocolObfuscation,
+        provider: NEPacketTunnelProvider
     ) {
         self.timings = timings
         self.tunnelAdapter = tunnelAdapter
@@ -69,6 +72,7 @@ public actor PacketTunnelActor {
         self.relaySelector = relaySelector
         self.settingsReader = settingsReader
         self.protocolObfuscator = protocolObfuscator
+        self.provider = provider
 
         consumeEvents(channel: eventChannel)
     }
@@ -379,11 +383,15 @@ extension PacketTunnelActor {
             connectionState.connectedEndpoint = connectedRelay.endpoint
             connectionState.remotePort = connectedRelay.endpoint.ipv4Relay.port
 
+
             return connectionState
         case var .connecting(connectionState), var .reconnecting(connectionState):
             if reason == .connectionLoss {
                 connectionState.incrementAttemptCount()
             }
+            self.tcpSender?.cancel()
+            self.tcpSender = nil
+
             fallthrough
         case var .connected(connectionState):
             let selectedRelays = try callRelaySelector(
@@ -396,6 +404,16 @@ extension PacketTunnelActor {
             connectionState.currentKey = settings.privateKey
             connectionState.connectedEndpoint = connectedRelay.endpoint
             connectionState.remotePort = connectedRelay.endpoint.ipv4Relay.port
+            
+            
+            if tcpSender == nil {
+                if #available(iOSApplicationExtension 18.0, *) {
+                    tcpSender = TcpSender(interface: self.provider.virtualInterface, logger: self.logger)
+                } else {
+                    // Fallback on earlier versions
+                }
+                tcpSender?.start()
+            }
             return connectionState
         case let .error(blockedState):
             keyPolicy = blockedState.keyPolicy
@@ -420,6 +438,8 @@ extension PacketTunnelActor {
                 isDaitaEnabled: settings.daita.daitaState.isEnabled
             )
         case .disconnecting, .disconnected:
+            self.tcpSender?.cancel()
+            self.tcpSender = nil
             return nil
         }
     }
