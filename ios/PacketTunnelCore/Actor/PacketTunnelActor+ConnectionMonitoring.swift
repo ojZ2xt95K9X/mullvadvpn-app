@@ -7,11 +7,10 @@
 //
 
 import Foundation
-import Network
 import Logging
+import Network
 
 extension PacketTunnelActor {
-    
     /// Assign a closure receiving tunnel monitor events.
     func setTunnelMonitorEventHandler() {
         tunnelMonitor.onEvent = { [weak self] event in
@@ -44,7 +43,6 @@ extension PacketTunnelActor {
             // Reset connection attempt once successfully connected.
             connState.connectionAttemptCount = 0
             state = .connected(connState)
-            
 
         case .initial, .connected, .disconnecting, .disconnected, .error, .negotiatingEphemeralPeer:
             break
@@ -62,15 +60,17 @@ extension PacketTunnelActor {
         }
     }
 }
+
 public class TcpSender {
     private let conn: NWConnection
     private var timer: Timer?
     private let queue = DispatchQueue(label: "lol, lmau", qos: .userInteractive)
     private let logger: Logger
+    
 
     init(interface: NWInterface?, logger: Logger) {
         self.logger = logger
-        
+
         let params = NWParameters.tcp
         params.requiredInterface = interface
 
@@ -78,32 +78,56 @@ public class TcpSender {
     }
 
     public func start() {
+        conn.stateUpdateHandler = { [weak self] newState in
+            guard let self else { return }
+            switch newState {
+            case .preparing:
+                logger.error("XXXX preparing")
+            case .cancelled:
+                logger.error("XXXX cancelled")
+            case let .failed(failure):
+                logger.error("XXXX failed: \(failure)")
+            case .ready:
+                logger.error("XXXX ready")
+                self.sendData()
+            case let .waiting(waitError):
+                logger.error("XXXX Waiting \(waitError)")
+            case .setup:
+                logger.error("XXXX setup")
+            @unknown default:
+                break
+            }
+        }
+
         conn.start(queue: queue)
 
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard case .ready = self?.conn.state else { return }
             self?.sendData()
         }
-        sendData()
     }
 
     private func sendData() {
         let data = Data("hello sterver".utf8)
-        conn.receive(minimumIncompleteLength: 0, maximumLength: 1024, completion: { [weak self] data, context,isComplete, error in
-            
-            if let error {
-                self?.logger.debug("RECEIVE ERROR: \(error)")
-            } else {
-                self?.logger.debug("RECEIVED SOMETHING")
+        conn.receive(
+            minimumIncompleteLength: 0,
+            maximumLength: 1024,
+            completion: { [weak self] data, context, isComplete, error in
+
+                if let error {
+                    self?.logger.debug("RECEIVE ERROR: \(error)")
+                } else {
+                    self?.logger.debug("RECEIVED SOMETHING")
+                }
             }
-            
-        })
+        )
         conn.send(content: data, completion: .contentProcessed { error in
             if let error = error {
-                print("Error sending data: \(error)")
+                self.logger.error("Error sending data: \(error)")
             }
         })
     }
-    
+
     public func cancel() {
         timer?.invalidate()
         conn.cancel()

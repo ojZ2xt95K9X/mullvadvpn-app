@@ -85,7 +85,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
         relaySelector = RelaySelectorWrapper(
             relayCache: ipOverrideWrapper
         )
-        
+
         actor = PacketTunnelActor(
             timings: PacketTunnelActorTimings(),
             tunnelAdapter: adapter,

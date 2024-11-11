@@ -50,7 +50,7 @@ public actor PacketTunnelActor {
     let protocolObfuscator: ProtocolObfuscation
     let provider: NEPacketTunnelProvider
     var tcpSender: TcpSender?
-    
+
     nonisolated let eventChannel = EventChannel()
 
     public init(
@@ -383,7 +383,6 @@ extension PacketTunnelActor {
             connectionState.connectedEndpoint = connectedRelay.endpoint
             connectionState.remotePort = connectedRelay.endpoint.ipv4Relay.port
 
-
             return connectionState
         case var .connecting(connectionState), var .reconnecting(connectionState):
             if reason == .connectionLoss {
@@ -404,8 +403,7 @@ extension PacketTunnelActor {
             connectionState.currentKey = settings.privateKey
             connectionState.connectedEndpoint = connectedRelay.endpoint
             connectionState.remotePort = connectedRelay.endpoint.ipv4Relay.port
-            
-            
+
             if tcpSender == nil {
                 if #available(iOSApplicationExtension 18.0, *) {
                     tcpSender = TcpSender(interface: self.provider.virtualInterface, logger: self.logger)
