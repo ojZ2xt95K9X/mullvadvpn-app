@@ -115,6 +115,7 @@ class StartTunnelOperation: ResultOperation<Void> {
         let protocolConfig = NETunnelProviderProtocol()
         protocolConfig.providerBundleIdentifier = ApplicationTarget.packetTunnel.bundleIdentifier
         protocolConfig.serverAddress = ""
+        protocolConfig.includeAllNetworks = true
 
         let alwaysOnRule = NEOnDemandRuleConnect()
         alwaysOnRule.interfaceTypeMatch = .any
