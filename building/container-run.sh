@@ -14,6 +14,8 @@ REPO_MOUNT_TARGET="/build"
 CARGO_TARGET_VOLUME_NAME=${CARGO_TARGET_VOLUME_NAME:-"cargo-target"}
 CARGO_REGISTRY_VOLUME_NAME=${CARGO_REGISTRY_VOLUME_NAME:-"cargo-registry"}
 GRADLE_CACHE_VOLUME_NAME=${GRADLE_CACHE_VOLUME_NAME:-"gradle-cache"}
+# Used to mount the debug.keystore into the container on the self-hosted runner.
+ANDROID_HOME=${GRADLE_CACHE_VOLUME_NAME:-"$HOME/.android"}
 ANDROID_CREDENTIALS_DIR=${ANDROID_CREDENTIALS_DIR:-""}
 CONTAINER_RUNNER=${CONTAINER_RUNNER:-"podman"}
 # Temporarily do not use mold for linking by default due to it causing build errors.
@@ -53,10 +55,12 @@ if [[ "$USE_MOLD" == "true" ]]; then
 fi
 
 set -x
+# TODO: Conditionally set CARGO_TARGET_VOLUME_NAME.
 exec "$CONTAINER_RUNNER" run --rm -it \
     -v "$REPO_DIR:$REPO_MOUNT_TARGET:Z" \
-    -v "$CARGO_TARGET_VOLUME_NAME:/cargo-target:Z" \
     -v "$CARGO_REGISTRY_VOLUME_NAME:/root/.cargo/registry:Z" \
+    -v "$CARGO_TARGET_VOLUME_NAME:/cargo-target:Z" \
+    -v "$ANDROID_HOME:/root/.android:Z" \
     "${optional_gradle_cache_volume[@]}" \
     "${optional_android_credentials_volume[@]}" \
     "$container_image_name" bash -c "$optional_mold $*"
