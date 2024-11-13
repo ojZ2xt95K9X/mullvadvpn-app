@@ -48,7 +48,6 @@ on:
         type: string
   # Build if main is updated to ensure up-to-date caches are available
   push:
-    branches: [main]
 
 permissions: {}
 
