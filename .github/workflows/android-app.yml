@@ -177,6 +177,18 @@ jobs:
     name: Build test apps
     runs-on: se-got-github-runner-006
     needs: generate-debug-keystore
+    strategy:
+      matrix:
+        include:
+          - test-type: app
+            assemble-command: assembleOssProdAndroidTest
+            artifact-path: android/app/build/outputs/apk
+          # - test-type: mockapi
+          #   assemble-command: :test:mockapi:assemble
+          #   artifact-path: android/test/mockapi/build/outputs/apk
+          # - test-type: e2e
+          #   assemble-command: :test:e2e:assemble
+          #   artifact-path: android/test/e2e/build/outputs/apk
     steps:
 
       - name: Checkout repository
@@ -192,7 +204,16 @@ jobs:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
-        run: ./building/container-run.sh android android/gradlew -p android assembleOssProdAndroidTest
+        run: ./building/container-run.sh android android/gradlew -p android ${{ matrix.assemble-command }}
+      
+      - name: Upload apks
+        # Using v3 due to v4 being very slow for this artifact.
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.test-type }}-instrumentation-apks
+          path: ${{ matrix.artifact-path }}
+          if-no-files-found: error
+          retention-days: 7
 
   instrumented-tests:
     name: Run instrumented tests
