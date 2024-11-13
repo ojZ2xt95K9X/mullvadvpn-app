@@ -112,7 +112,7 @@ jobs:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
-        run: ./building/container-run.sh android android/gradlew -p android compileOssProdDebug
+        run: ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin
 
       - name: Wait for other jobs (native, relay list)
         uses: kachick/wait-other-jobs@v2.0.3
