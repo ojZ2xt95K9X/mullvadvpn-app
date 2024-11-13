@@ -57,7 +57,7 @@ jobs:
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
         run: |
           mkdir -p android/app/build/extraAssets
-          ./building/container-run.sh android RUSTFLAGS="--deny warnings" cargo run --bin relay_list > android/app/build/extraAssets/relays.json
+          ./building/container-run.sh android cargo run --bin relay_list > android/app/build/extraAssets/relays.json
 
       - name: Upload
         uses: actions/upload-artifact@v4
