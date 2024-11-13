@@ -99,7 +99,7 @@ jobs:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
-        run: ./building/container-run.sh android bash -c "ARCHITECTURES=${{ matrix.arch }} ./build-apk.sh --dev-build --skip-apk"
+        run: ./building/container-run.sh android ARCHITECTURES=${{ matrix.arch }} ./build-apk.sh --dev-build --skip-apk
 
       - name: Upload native libs
         uses: actions/upload-artifact@v4
@@ -152,7 +152,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: native-libs-*
-          name: native-libs
           path: android/app/build/extraJni
           merge-multiple: true
 
