@@ -141,6 +141,9 @@ jobs:
           path: android/app/build/extraJni
           # merge-multiple: true
 
+      - name: Temp maybenot fix
+        run: touch android/app/build/extraAssets/maybenot_machines_v2
+
       - name: Assemble debug app
         env:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
