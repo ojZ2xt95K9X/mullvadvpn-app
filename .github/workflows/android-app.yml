@@ -30,7 +30,7 @@ jobs:
           retention-days: 7
 
   generate-relay-list:
-    name: Generate relay list
+    name: Generate relay list (migrate to secret)
     runs-on: se-got-github-runner-006
     steps:
       - name: Get date
