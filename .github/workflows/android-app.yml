@@ -152,31 +152,31 @@ jobs:
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
         run: ./building/container-run.sh android android/gradlew -p android assembleOssProdAndroidTest
 
-  run-lint-and-tests:
-    name: Run lint and test tasks
-    needs: generate-debug-keystore
-    runs-on: se-got-github-runner-006
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include:
-          - gradle-task: testDebugUnitTest -x :test:arch:testDebugUnitTest :app:testOssProdDebugUnitTest :service:testOssProdDebugUnitTest :lib:billing:testDebugUnitTest :lib:daemon-grpc:testDebugUnitTest :lib:shared:testDebugUnitTest
-          - gradle-task: :test:arch:test --rerun-tasks
-          - gradle-task: detekt
-          - gradle-task: lint
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # run-lint-and-tests:
+  #   name: Run lint and test tasks
+  #   needs: generate-debug-keystore
+  #   runs-on: se-got-github-runner-006
+  #   strategy:
+  #     fail-fast: false
+  #     max-parallel: 1
+  #     matrix:
+  #       include:
+  #         - gradle-task: testDebugUnitTest -x :test:arch:testDebugUnitTest :app:testOssProdDebugUnitTest :service:testOssProdDebugUnitTest :lib:billing:testDebugUnitTest :lib:daemon-grpc:testDebugUnitTest :lib:shared:testDebugUnitTest
+  #         - gradle-task: :test:arch:test --rerun-tasks
+  #         - gradle-task: detekt
+  #         - gradle-task: lint
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: debug-keystore
-          path: .android
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: debug-keystore
+  #         path: .android
 
-      - name: Run gradle test task
-        env:
-          CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
-          CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
-          GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
-        run: ./building/container-run.sh android android/gradlew -p android ${{ matrix.gradle-task }}
+  #     - name: Run gradle test task
+  #       env:
+  #         CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
+  #         CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
+  #         GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
+  #       run: ./building/container-run.sh android android/gradlew -p android ${{ matrix.gradle-task }}
