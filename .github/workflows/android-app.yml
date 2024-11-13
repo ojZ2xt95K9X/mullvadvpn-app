@@ -155,15 +155,15 @@ jobs:
           - arch: "x86_64"
             abi: "x86_64"
             target: "x86_64-linux-android"
-          - arch: "i686"
-            abi: "x86"
-            target: "i686-linux-android"
+          # - arch: "i686"
+          #   abi: "x86"
+          #   target: "i686-linux-android"
           - arch: "aarch64"
             abi: "arm64-v8a"
             target: "aarch64-linux-android"
-          - arch: "armv7"
-            abi: "armeabi-v7a"
-            target: "armv7-linux-androideabi"
+          # - arch: "armv7"
+          #   abi: "armeabi-v7a"
+          #   target: "armv7-linux-androideabi"
     steps:
       # Fix for HOME path overridden by GH runners when building in containers, see:
       # https://github.com/actions/runner/issues/863
@@ -180,25 +180,10 @@ jobs:
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
-      - name: Calculate native lib cache hash
-        id: native-lib-cache-hash
-        shell: bash
-        run: |
-          git config --global --add safe.directory $(pwd)
-          non_android_hash="$(git grep --cached -l '' -- ':!android/' \
-            | xargs -d '\n' sha1sum \
-            | sha1sum \
-            | awk '{print $1}')"
-          echo "native_lib_hash=$non_android_hash" >> $GITHUB_OUTPUT
-
-      - name: Cache native libraries
-        uses: actions/cache@v4
-        id: cache-native-libs
-        env:
-          cache_hash: ${{ steps.native-lib-cache-hash.outputs.native_lib_hash }}
+      - name: Cargo rust cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: ./android/app/build/extraJni
-          key: android-native-libs-${{ runner.os }}-${{ matrix.abi }}-${{ env.cache_hash }}
+          key: native-${{ matrix.abi }}
 
       - name: Build native libraries
         if: steps.cache-native-libs.outputs.cache-hit != 'true'
