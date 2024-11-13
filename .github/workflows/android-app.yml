@@ -70,6 +70,21 @@ jobs:
   build-native:
     name: Build native
     runs-on: se-got-github-runner-006
+    strategy:
+      matrix:
+        include:
+          - arch: "x86_64"
+            abi: "x86_64"
+            target: "x86_64-linux-android"
+          # - arch: "i686"
+          #   abi: "x86"
+          #   target: "i686-linux-android"
+          - arch: "aarch64"
+            abi: "arm64-v8a"
+            target: "aarch64-linux-android"
+          # - arch: "armv7"
+          #   abi: "armeabi-v7a"
+          #   target: "armv7-linux-androideabi"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,12 +99,12 @@ jobs:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
-        run: ./building/container-run.sh android ./build-apk.sh --dev-build --skip-apk
+        run: ./building/container-run.sh android bash -c "ARCHITECTURES=${{ matrix.arch }} ./build-apk.sh --dev-build --skip-apk"
 
       - name: Upload native libs
         uses: actions/upload-artifact@v4
         with:
-          name: native-libs #-${{ matrix.arch }}
+          name: native-libs-${{ matrix.arch }}
           path: android/app/build/extraJni
           if-no-files-found: error
           retention-days: 7
@@ -136,10 +151,10 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          #pattern: native-libs-*
+          pattern: native-libs-*
           name: native-libs
           path: android/app/build/extraJni
-          # merge-multiple: true
+          merge-multiple: true
 
       - name: Temp maybenot fix
         run: touch android/app/build/extraAssets/maybenot_machines_v2
