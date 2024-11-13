@@ -67,10 +67,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build-app:
-    name: Build app
+  build-native:
+    name: Build native
     runs-on: se-got-github-runner-006
-    needs: [generate-debug-keystore, generate-relay-list]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -80,35 +79,6 @@ jobs:
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: debug-keystore
-          path: .android
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: relay-list
-          path: android/app/build/extraAssets
-
-      # - name: Wait for other jobs (native)
-      #   uses: kachick/wait-other-jobs@v3.4.1
-      #   with:
-      #     skip-same-workflow: 'false'
-      #     early-exit: 'false'
-      #     wait-list: |
-      #       [
-      #         {
-      #           "workflowFile": "android-app.yml",
-      #           "jobName": "build-native"
-      #         }
-      #       ]
-
-      # - uses: actions/download-artifact@v4
-      #   with:
-      #     pattern: native-libs-*
-      #     path: android/app/build/extraJni
-      #     merge-multiple: true
-
       - name: Build native
         env:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
@@ -116,7 +86,62 @@ jobs:
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
         run: ./building/container-run.sh android ./build-apk.sh --dev-build --skip-apk
 
-      - name: Build debug app
+      - name: Upload native libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-libs #-${{ matrix.arch }}
+          path: android/app/build/extraJni
+          if-no-files-found: error
+          retention-days: 7
+
+  build-app:
+    name: Build app
+    runs-on: se-got-github-runner-006
+    needs: [generate-debug-keystore]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: debug-keystore
+          path: .android
+
+      - name: Compile debug app
+        env:
+          CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
+          CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
+          GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
+        run: ./building/container-run.sh android android/gradlew -p android compileOssProdDebug
+
+      - name: Wait for other jobs (native, relay list)
+        uses: kachick/wait-other-jobs@v2.0.3
+        with:
+          wait-list: |
+            [
+              {
+                "workflowFile": "android-app.yml",
+                "jobName": "build-native"
+              },
+              {
+                "workflowFile": "android-app.yml",
+                "jobName": "generate-relay-list"
+              }
+            ]
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: relay-list
+          path: android/app/build/extraAssets
+
+      - uses: actions/download-artifact@v4
+        with:
+          #pattern: native-libs-*
+          name: native-libs
+          path: android/app/build/extraJni
+          # merge-multiple: true
+
+      - name: Assemble debug app
         env:
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
