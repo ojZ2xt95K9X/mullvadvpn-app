@@ -73,9 +73,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - arch: "x86_64"
-            abi: "x86_64"
-            target: "x86_64-linux-android"
+          # - arch: "x86_64"
+          #   abi: "x86_64"
+          #   target: "x86_64-linux-android"
           # - arch: "i686"
           #   abi: "x86"
           #   target: "i686-linux-android"
@@ -106,7 +106,7 @@ jobs:
         run: ./building/container-run.sh android ARCHITECTURES=${{ matrix.arch }} ./build-apk.sh --dev-build --skip-apk
 
       - name: Upload native libs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: native-libs-${{ matrix.arch }}
           path: android/app/build/extraJni
