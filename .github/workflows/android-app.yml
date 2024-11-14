@@ -160,6 +160,7 @@ jobs:
 
       - name: Assemble debug app
         env:
+          ANDROID_HOME: .android
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
@@ -201,6 +202,7 @@ jobs:
 
       - name: Build test apps
         env:
+          ANDROID_HOME: .android
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
