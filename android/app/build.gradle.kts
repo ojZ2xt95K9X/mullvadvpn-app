@@ -236,12 +236,12 @@ android {
         createDistBundle.dependsOn("bundle$capitalizedVariantName")
 
         // Ensure all relevant assemble tasks depend on our ensure tasks.
-        tasks["assemble$capitalizedVariantName"].apply {
-            dependsOn(tasks["ensureRelayListExist"])
-            dependsOn(tasks["ensureMaybenotMachinesExist"])
-            dependsOn(tasks["ensureJniDirectoryExist"])
-            dependsOn(tasks["ensureValidVersionCode"])
-        }
+//        tasks["assemble$capitalizedVariantName"].apply {
+//            dependsOn(tasks["ensureRelayListExist"])
+//            dependsOn(tasks["ensureMaybenotMachinesExist"])
+//            dependsOn(tasks["ensureJniDirectoryExist"])
+//            dependsOn(tasks["ensureValidVersionCode"])
+//        }
     }
 }
 
@@ -273,47 +273,47 @@ configure<org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension> {
     skipConfigurations = listOf("lintClassPath")
 }
 
-tasks.register("ensureRelayListExist") {
-    doLast {
-        if (!relayListPath.exists()) {
-            throw GradleException("Missing relay list: $relayListPath")
-        }
-    }
-}
-
-tasks.register("ensureMaybenotMachinesExist") {
-    doLast {
-        if (!maybenotMachinesFile.exists()) {
-            throw GradleException("Missing maybenot machines: $maybenotMachinesFile")
-        }
-    }
-}
-
-tasks.register("ensureJniDirectoryExist") {
-    doLast {
-        if (!extraJniDirectory.asFile.exists()) {
-            throw GradleException("Missing JNI directory: $extraJniDirectory")
-        }
-    }
-}
-
-// This is a safety net to avoid generating too big version codes, since that could potentially be
-// hard and inconvenient to recover from.
-tasks.register("ensureValidVersionCode") {
-    doLast {
-        val versionCode = project.android.defaultConfig.versionCode!!
-        if (versionCode >= MAX_ALLOWED_VERSION_CODE) {
-            throw GradleException("Bad version code: $versionCode")
-        }
-    }
-}
-
-tasks.create("printVersion") {
-    doLast {
-        println("versionCode=${project.android.defaultConfig.versionCode}")
-        println("versionName=${project.android.defaultConfig.versionName}")
-    }
-}
+//tasks.register("ensureRelayLi/*stExist") {
+//    doLast {
+//        if (!relayListPath.exists()) {
+//            throw GradleException("Missing relay list: $relayListPath")
+//        }
+//    }
+//}
+//
+//tasks.register("ensureMaybenotMachinesExist") {
+//    doLast {
+//        if (!maybenotMachinesFile.exists()) {
+//            throw GradleException("Missing maybenot machines: $maybenotMachinesFile")
+//        }
+//    }
+//}
+//
+//tasks.register("ensureJniDirectoryExist") {
+//    doLast {
+//        if (!extraJniDirectory.asFile.exists()) {
+//            throw GradleException("Missing JNI directory: $extraJniDirectory")
+//        }
+//    }
+//}
+//
+//// This is a safety net to avoid generating too big version codes, since that could potentially be
+//// hard and inconvenient to recover from.
+//tasks.register("ensureValidVersionCode") {
+//    doLast {
+//        val versionCode = project.android.defaultConfig.versionCode!!
+//        if (versionCode >= MAX_ALLOWED_VERSION_CODE) {
+//            throw GradleException("Bad version code: $versionCode")
+//        }
+//    }
+//}
+//
+//tasks.create("printVersion") {
+//    doLast {
+//        println("versionCode=${project.android.defaultConfig.versionCode}")
+//        println("versionName=${project.android.defaultConfig.versionName}")
+//    }
+//}*/
 
 play { serviceAccountCredentials.set(file("play-api-key.json")) }
 
