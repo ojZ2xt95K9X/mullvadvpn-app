@@ -15,7 +15,7 @@ CARGO_TARGET_VOLUME_NAME=${CARGO_TARGET_VOLUME_NAME:-"cargo-target"}
 CARGO_REGISTRY_VOLUME_NAME=${CARGO_REGISTRY_VOLUME_NAME:-"cargo-registry"}
 GRADLE_CACHE_VOLUME_NAME=${GRADLE_CACHE_VOLUME_NAME:-"gradle-cache"}
 # Used to mount the debug.keystore into the container on the self-hosted runner.
-ANDROID_HOME=${GRADLE_CACHE_VOLUME_NAME:-"$HOME/.android"}
+ANDROID_HOME=${ANDROID_HOME:-"$HOME/.android"}
 ANDROID_CREDENTIALS_DIR=${ANDROID_CREDENTIALS_DIR:-""}
 CONTAINER_RUNNER=${CONTAINER_RUNNER:-"podman"}
 # Temporarily do not use mold for linking by default due to it causing build errors.
