@@ -78,9 +78,9 @@ jobs:
     strategy:
       matrix:
         include:
-          # - arch: "x86_64"
-          #   abi: "x86_64"
-          #   target: "x86_64-linux-android"
+          - arch: "x86_64"
+            abi: "x86_64"
+            target: "x86_64-linux-android"
           # - arch: "i686"
           #   abi: "x86"
           #   target: "i686-linux-android"
@@ -163,6 +163,12 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: native-libs-aarch64
+          path: android/app/build/extraJni
+          #merge-multiple: true
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: native-libs-x86_64
           path: android/app/build/extraJni
           #merge-multiple: true
 
