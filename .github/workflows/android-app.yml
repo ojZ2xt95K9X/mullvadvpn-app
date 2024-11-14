@@ -49,9 +49,14 @@ jobs:
         if: steps.cache-relay-list.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
 
+      - name: Create dummy dir
+        if: steps.cache-relay-list.outputs.cache-hit != 'true'
+        run: mkdir .android
+
       - name: Generate
         if: steps.cache-relay-list.outputs.cache-hit != 'true'
         env:
+          ANDROID_HOME: .android
           CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
           CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
           GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
