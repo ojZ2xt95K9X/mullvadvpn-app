@@ -1,6 +1,7 @@
 import react from 'eslint-plugin-react';
 import reactcompiler from 'eslint-plugin-react-compiler';
 import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 
 import workspaceConfig from '../../eslint.config.mjs';
@@ -36,12 +37,15 @@ export default [
     plugins: {
       'react-hooks': reactHooks,
       'react-compiler': reactcompiler,
+      'react-refresh': reactRefresh,
     },
     rules: {
       'react/jsx-no-bind': 'error',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'react-compiler/react-compiler': 'error',
+      // Turn on when ready
+      'react-refresh/only-export-components': 'off',
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
     },
