@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { colors } from '../../../config.json';
-import { CustomListError, CustomLists, RelayLocation } from '../../../shared/daemon-rpc-types';
+import type { CustomListError, CustomLists, RelayLocation } from '../../../shared/daemon-rpc-types';
 import { messages } from '../../../shared/gettext';
 import log from '../../../shared/logging';
 import { useAppContext } from '../../context';

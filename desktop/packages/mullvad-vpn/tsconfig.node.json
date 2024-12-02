@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "src/main/**/*.ts",
+    "src/shared/**/*.ts",
+    "playwright.config.ts",
+    "standalone-tests.ts",
+    "test/**/*.ts"
+  ]
+}
