@@ -61,13 +61,12 @@ impl ShadowsocksProxyMonitor {
         let server = ServerConfig::new(
             settings.endpoint,
             settings.password.clone(),
-            settings.cipher.parse().map_err(|_| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    format!("Invalid cipher: {}", settings.cipher),
-                )
-            })?,
-        );
+            settings
+                .cipher
+                .parse()
+                .map_err(|_| io::Error::other(format!("Invalid cipher: {}", settings.cipher)))?,
+        )
+        .map_err(|_| io::Error::other(format!("Invalid password: {}", settings.password)))?;
 
         config
             .server

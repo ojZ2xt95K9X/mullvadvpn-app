@@ -111,10 +111,12 @@ impl InnerConnectionMode {
             InnerConnectionMode::Shadowsocks(shadowsocks) => {
                 let first_hop = shadowsocks.params.peer;
                 let make_proxy_stream = |tcp_stream| async {
+                    let server_config =
+                        ServerConfig::try_from(shadowsocks.params).map_err(io::Error::other)?;
                     Ok(ProxyClientStream::from_stream(
                         shadowsocks.proxy_context,
                         tcp_stream,
-                        &ServerConfig::from(shadowsocks.params),
+                        &server_config,
                         *addr,
                     ))
                 };
@@ -239,8 +241,10 @@ struct ParsedShadowsocksConfig {
     cipher: CipherKind,
 }
 
-impl From<ParsedShadowsocksConfig> for ServerConfig {
-    fn from(config: ParsedShadowsocksConfig) -> Self {
+impl TryFrom<ParsedShadowsocksConfig> for ServerConfig {
+    type Error = shadowsocks::config::ServerConfigError;
+
+    fn try_from(config: ParsedShadowsocksConfig) -> Result<Self, Self::Error> {
         ServerConfig::new(config.peer, config.password, config.cipher)
     }
 }
