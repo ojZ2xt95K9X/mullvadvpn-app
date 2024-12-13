@@ -92,12 +92,14 @@ pub struct IosTcpProvider {
     funcs: WgTcpConnectionFuncs,
 }
 
+type InFlightIoTask = Option<Pin<Box<tokio::task::JoinHandle<io::Result<Vec<u8>>>>>>;
+
 pub struct IosTcpConnection {
     tunnel_handle: i32,
     socket_handle: i32,
     funcs: WgTcpConnectionFuncs,
-    in_flight_read: Option<Pin<Box<tokio::task::JoinHandle<io::Result<Vec<u8>>>>>>,
-    in_flight_write: Option<Pin<Box<tokio::task::JoinHandle<io::Result<Vec<u8>>>>>>,
+    in_flight_read:  InFlightIoTask,
+    in_flight_write: InFlightIoTask,
 }
 
 #[derive(Debug)]
@@ -244,17 +246,20 @@ impl AsyncRead for IosTcpConnection {
                 // `funcs.receive_fn` must be a valid function pointer.
                 let result =
                     unsafe { funcs.receive(tunnel_handle, socket_handle, buffer.as_mut_slice()) };
-                if result < 0 {
-                    Err(io::Error::new(
+                match result {
+                    size @ 1.. => {
+                        buffer.truncate(size as usize);
+                        Ok(buffer)
+                    }
+
+                    errval @ ..0 => Err(io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Read error: {}", result),
-                    ))
-                } else if result == 0 {
-                    Err(connection_closed_err())
-                } else {
-                    buffer.truncate(result as usize);
-                    Ok(buffer)
+                        format!("Read error: {}", errval),
+                    )),
+
+                    0 => Err(connection_closed_err()),
                 }
+
             });
 
             self.in_flight_read = Some(Box::pin(task));
