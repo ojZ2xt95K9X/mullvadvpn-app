@@ -6,7 +6,7 @@ use tokio::{runtime::Handle as TokioHandle, task::JoinHandle};
 use tonic::transport::channel::Endpoint;
 use tower::util::service_fn;
 
-const GRPC_HOST_CSTR: &CStr = &c"10.64.0.1:1337";
+const GRPC_HOST_CSTR: &CStr = c"10.64.0.1:1337";
 
 pub struct ExchangeCancelToken {
     inner: Mutex<CancelToken>,
