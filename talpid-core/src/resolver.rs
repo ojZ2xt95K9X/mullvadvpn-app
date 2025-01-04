@@ -23,6 +23,7 @@ use futures::{
 use hickory_proto::{
     op::LowerQuery,
     rr::{LowerName, RecordType},
+    ProtoErrorKind,
 };
 use hickory_server::{
     authority::{
@@ -34,9 +35,8 @@ use hickory_server::{
     },
     resolver::{
         config::{NameServerConfigGroup, ResolverConfig, ResolverOpts},
-        error::{ResolveError, ResolveErrorKind},
         lookup::Lookup,
-        TokioAsyncResolver,
+        ResolveError, TokioResolver,
     },
     server::{Request, RequestHandler, ResponseHandler, ResponseInfo},
     ServerFuture,
@@ -159,7 +159,7 @@ enum Resolver {
     Blocking,
 
     /// Forward DNS queries to a configured server
-    Forwarding(TokioAsyncResolver),
+    Forwarding(TokioResolver),
 }
 
 impl From<Config> for Resolver {
@@ -177,7 +177,7 @@ impl From<Config> for Resolver {
                     ResolverConfig::from_parts(None, vec![], forward_server_config);
                 let resolver_opts = ResolverOpts::default();
 
-                let resolver = TokioAsyncResolver::tokio(forward_config, resolver_opts);
+                let resolver = TokioResolver::tokio(forward_config, resolver_opts);
 
                 Resolver::Forwarding(resolver)
             }
@@ -212,12 +212,11 @@ impl Resolver {
         }
 
         let return_query = query.original().clone();
-        let mut return_record = Record::with(
+        let return_record = Record::from_rdata(
             return_query.name().clone(),
-            return_query.query_type(),
             TTL_SECONDS,
+            RData::A(rdata::A(RESOLVED_ADDR)),
         );
-        return_record.set_data(Some(RData::A(rdata::A(RESOLVED_ADDR))));
 
         log::debug!(
             "Spoofing query for captive portal domain: {}",
@@ -240,7 +239,7 @@ impl Resolver {
 
     /// Forward DNS queries to the specified DNS resolver.
     async fn resolve_forward(
-        resolver: TokioAsyncResolver,
+        resolver: TokioResolver,
         query: LowerQuery,
     ) -> std::result::Result<Box<dyn LookupObject>, ResolveError> {
         let return_query = query.original().clone();
@@ -465,8 +464,8 @@ impl ResolverImpl {
                     response_handler.send_response(response).await
                 }
                 Err(_error) => return,
-                Ok(Err(resolve_err)) => match resolve_err.kind() {
-                    ResolveErrorKind::NoRecordsFound { response_code, .. } => {
+                Ok(Err(resolve_err)) => match resolve_err.proto().map(|p| p.kind()) {
+                    Some(ProtoErrorKind::NoRecordsFound { response_code, .. }) => {
                         let response = MessageResponseBuilder::from_message_request(message)
                             .error_msg(message.header(), *response_code);
                         response_handler.send_response(response).await
@@ -533,7 +532,7 @@ mod test {
     use super::*;
     use hickory_server::resolver::{
         config::{NameServerConfigGroup, ResolverConfig, ResolverOpts},
-        TokioAsyncResolver,
+        ResolveError, TokioResolver,
     };
     use std::{mem, net::UdpSocket, thread, time::Duration};
 
@@ -541,13 +540,13 @@ mod test {
         super::start_resolver().await.unwrap()
     }
 
-    fn get_test_resolver(port: u16) -> hickory_server::resolver::TokioAsyncResolver {
+    fn get_test_resolver(port: u16) -> TokioResolver {
         let resolver_config = ResolverConfig::from_parts(
             None,
             vec![],
             NameServerConfigGroup::from_ips_clear(&[Ipv4Addr::LOCALHOST.into()], port, true),
         );
-        TokioAsyncResolver::tokio(resolver_config, ResolverOpts::default())
+        TokioResolver::tokio(resolver_config, ResolverOpts::default())
     }
 
     #[test]
@@ -560,7 +559,7 @@ mod test {
             for domain in &*ALLOWED_DOMAINS {
                 test_resolver.lookup(domain, RecordType::A).await?;
             }
-            Ok::<(), hickory_server::resolver::error::ResolveError>(())
+            Ok::<(), ResolveError>(())
         })
         .expect("Resolution of domains failed");
     }

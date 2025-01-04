@@ -2,8 +2,7 @@
 //!
 use crate::config;
 use core::fmt;
-use hickory_resolver::{config::*, error::ResolveError, TokioAsyncResolver};
-use rustls::ClientConfig;
+use hickory_resolver::{config::*, ResolveError, TokioResolver};
 use std::{net::IpAddr, sync::Arc, time::Duration};
 use tokio::time::error::Elapsed;
 
@@ -99,7 +98,7 @@ pub async fn resolve_config_with_resolverconfig(
     domain: &str,
     timeout: Duration,
 ) -> Result<Vec<config::ProxyConfig>, Error> {
-    let resolver = TokioAsyncResolver::tokio(resolver_config, options);
+    let resolver = TokioResolver::tokio(resolver_config, options);
     let lookup = tokio::time::timeout(timeout, resolver.ipv6_lookup(domain))
         .await
         .map_err(Error::Timeout)?
@@ -121,22 +120,28 @@ pub async fn resolve_config_with_resolverconfig(
     Ok(proxy_configs)
 }
 
-fn client_config_tls12() -> ClientConfig {
-    use rustls::RootCertStore;
-    let mut root_store = RootCertStore::empty();
-    root_store.add_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
-        rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
-            ta.subject,
-            ta.spki,
-            ta.name_constraints,
-        )
-    }));
+fn client_config_tls12() -> rustls::ClientConfig {
+    let root_store = {
+        let mut root_store = rustls::RootCertStore::empty();
+        let trust_anchors =
+            webpki_roots::TLS_SERVER_ROOTS
+                .iter()
+                .map(|root_ca| rustls_pki_types::TrustAnchor {
+                    subject: root_ca.subject.clone(),
+                    subject_public_key_info: root_ca.subject_public_key_info.clone(),
+                    name_constraints: root_ca.name_constraints.clone(),
+                });
+        root_store.extend(trust_anchors);
+        root_store
+    };
 
-    ClientConfig::builder()
-        .with_safe_default_cipher_suites()
-        .with_safe_default_kx_groups()
-        .with_safe_default_protocol_versions() // this enables TLS 1.2 and 1.3
-        .unwrap()
+    // Ensure CryptoProvider is set for this process.
+    let crypto_provider = rustls::crypto::aws_lc_rs::default_provider();
+    if let Err(e) = crypto_provider.install_default() {
+        log::error!("Crypto provider has already been installed: {e:?}");
+    };
+
+    rustls::ClientConfig::builder()
         .with_root_certificates(root_store)
         .with_no_client_auth()
 }

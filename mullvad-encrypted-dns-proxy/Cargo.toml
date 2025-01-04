@@ -15,8 +15,9 @@ tokio = { workspace = true, features = [ "macros" ] }
 log = { workspace = true }
 hickory-resolver = { workspace = true, features = [ "dns-over-https-rustls" ]}
 serde = { workspace = true, features = ["derive"] }
-webpki-roots = "0.25.0"
-rustls = "0.21"
+webpki-roots = "0.26"
+rustls = "0.23"
+rustls-pki-types = "1.10"
 
 [dev-dependencies]
 env_logger = { workspace = true }
