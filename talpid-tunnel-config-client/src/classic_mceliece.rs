@@ -48,15 +48,17 @@ fn spawn_keypair_worker(bufsize: usize) -> mpsc::Receiver<KeyPair> {
             let Ok(permit) = tx.reserve().await else {
                 return;
             };
+            let start = std::time::Instant::now();
             std::thread::scope(|s| {
                 std::thread::Builder::new()
                     .stack_size(STACK_SIZE)
-                    .name("McEliece key pair generator".to_string())
+                    .name("mceliece key pair generator".to_string())
                     .spawn_scoped(s, || {
                         permit.send(keypair_boxed(&mut rand::thread_rng()));
                     })
                     .unwrap();
             });
+            log::warn!("Generator took {:?}", start.elapsed());
         }
     });
 
@@ -64,13 +66,16 @@ fn spawn_keypair_worker(bufsize: usize) -> mpsc::Receiver<KeyPair> {
 }
 
 pub async fn generate_keys() -> KeyPair {
-    KEYPAIR_RX
+    let start = std::time::Instant::now();
+    let recv = KEYPAIR_RX
         .get_or_init(|| Mutex::new(spawn_keypair_worker(BUFSIZE)))
         .lock()
         .await
         .recv()
         .await
-        .expect("Expected to receive key pair, but key generator has been stopped.")
+        .expect("Expected to receive key pair, but key generator has been stopped.");
+    log::warn!("Receiver took {:?}", start.elapsed());
+    recv
 }
 
 /// Spawn a worker which computes and buffers [`BUFSIZE`] of McEliece key pairs, used by PQ tunnels.
