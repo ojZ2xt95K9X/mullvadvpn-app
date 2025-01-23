@@ -217,30 +217,26 @@ final class TunnelManager: StorePaymentObserver, @unchecked Sendable {
         operationQueue.addOperation(loadTunnelOperation)
     }
 
-    func startTunnel(completionHandler: ((Error?) -> Void)? = nil) {
-        nonisolated(unsafe) let nonisolatedCompletionHandler = completionHandler
-
+    func startTunnel(completionHandler: sending ((Error?) -> Void)? = nil) {
         let operation = StartTunnelOperation(
             dispatchQueue: internalQueue,
             interactor: TunnelInteractorProxy(self),
             completionHandler: { [weak self] result in
                 guard let self else { return }
-                DispatchQueue.main.async {
-                    if let error = result.error {
-                        self.logger.error(
-                            error: error,
-                            message: "Failed to start the tunnel."
-                        )
+                if let error = result.error {
+                    self.logger.error(
+                        error: error,
+                        message: "Failed to start the tunnel."
+                    )
 
-                        let tunnelError = StartTunnelError(underlyingError: error)
+                    let tunnelError = StartTunnelError(underlyingError: error)
 
-                        self.observerList.notify { observer in
-                            observer.tunnelManager(self, didFailWithError: tunnelError)
-                        }
+                    self.observerList.notify { observer in
+                        observer.tunnelManager(self, didFailWithError: tunnelError)
                     }
-
-                    nonisolatedCompletionHandler?(result.error)
                 }
+
+                completionHandler?(result.error)
             }
         )
 
@@ -254,30 +250,27 @@ final class TunnelManager: StorePaymentObserver, @unchecked Sendable {
         operationQueue.addOperation(operation)
     }
 
-    func stopTunnel(completionHandler: ((Error?) -> Void)? = nil) {
-        nonisolated(unsafe) let nonisolatedCompletionHandler = completionHandler
+    func stopTunnel(completionHandler: sending ((Error?) -> Void)? = nil) {
         let operation = StopTunnelOperation(
             dispatchQueue: internalQueue,
             interactor: TunnelInteractorProxy(self)
         ) { [weak self] result in
             guard let self else { return }
 
-            DispatchQueue.main.async {
-                if let error = result.error {
-                    self.logger.error(
-                        error: error,
-                        message: "Failed to stop the tunnel."
-                    )
+            if let error = result.error {
+                self.logger.error(
+                    error: error,
+                    message: "Failed to stop the tunnel."
+                )
 
-                    let tunnelError = StopTunnelError(underlyingError: error)
+                let tunnelError = StopTunnelError(underlyingError: error)
 
-                    self.observerList.notify { observer in
-                        observer.tunnelManager(self, didFailWithError: tunnelError)
-                    }
+                self.observerList.notify { observer in
+                    observer.tunnelManager(self, didFailWithError: tunnelError)
                 }
-
-                nonisolatedCompletionHandler?(result.error)
             }
+
+            completionHandler?(result.error)
         }
 
         operation.addObserver(BackgroundObserver(

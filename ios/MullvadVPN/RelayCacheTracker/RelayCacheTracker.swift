@@ -6,6 +6,7 @@
 //  Copyright © 2019 Mullvad VPN AB. All rights reserved.
 //
 
+import BackgroundTasks
 import Foundation
 import MullvadLogging
 import MullvadREST
@@ -16,7 +17,8 @@ import UIKit
 protocol RelayCacheTrackerProtocol: Sendable {
     func startPeriodicUpdates()
     func stopPeriodicUpdates()
-    func updateRelays(completionHandler: (@Sendable (Result<RelaysFetchResult, Error>) -> Void)?) -> Cancellable
+    func updateRelays(task: BGTask?, completionHandler: sending ((BGTask?, Result<RelaysFetchResult, Error>) -> Void)?)
+        -> Cancellable
     func getCachedRelays() throws -> CachedRelays
     func getNextUpdateDate() -> Date
     func addObserver(_ observer: RelayCacheTrackerObserver)
@@ -70,8 +72,6 @@ final class RelayCacheTracker: RelayCacheTrackerProtocol, @unchecked Sendable {
                 error: error,
                 message: "Failed to read the relay cache during initialization."
             )
-
-            _ = updateRelays(completionHandler: nil)
         }
     }
 
@@ -164,7 +164,10 @@ final class RelayCacheTracker: RelayCacheTrackerProtocol, @unchecked Sendable {
         timerSource = nil
     }
 
-    func updateRelays(completionHandler: (@Sendable (Result<RelaysFetchResult, Error>) -> Void)? = nil)
+    func updateRelays(
+        task: BGTask?,
+        completionHandler: sending ((BGTask?, Result<RelaysFetchResult, Error>) -> Void)? = nil
+    )
         -> Cancellable {
         let operation = ResultBlockOperation<RelaysFetchResult> { finish in
             let cachedRelays = try? self.getCachedRelays()
@@ -179,6 +182,10 @@ final class RelayCacheTracker: RelayCacheTrackerProtocol, @unchecked Sendable {
             }
         }
 
+        task?.expirationHandler = {
+            operation.cancel()
+        }
+
         operation.addObserver(
             BackgroundObserver(
                 backgroundTaskProvider: backgroundTaskProvider,
@@ -188,7 +195,9 @@ final class RelayCacheTracker: RelayCacheTrackerProtocol, @unchecked Sendable {
         )
 
         operation.completionQueue = .main
-        operation.completionHandler = completionHandler
+        operation.completionHandler = { result in
+            completionHandler?(task, result)
+        }
 
         operationQueue.addOperation(operation)
 
@@ -287,7 +296,7 @@ final class RelayCacheTracker: RelayCacheTrackerProtocol, @unchecked Sendable {
     private func scheduleRepeatingTimer(startTime: DispatchWallTime) {
         let timerSource = DispatchSource.makeTimerSource()
         timerSource.setEventHandler { [weak self] in
-            _ = self?.updateRelays()
+            _ = self?.updateRelays(task: nil)
         }
 
         timerSource.schedule(

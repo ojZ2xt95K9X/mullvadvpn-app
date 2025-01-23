@@ -279,14 +279,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             forTaskWithIdentifier: BackgroundTask.appRefresh.identifier,
             using: nil
         ) { [self] task in
-            nonisolated(unsafe) let nonisolatedTask = task
-
-            let handle = relayCacheTracker.updateRelays { result in
-                nonisolatedTask.setTaskCompleted(success: result.isSuccess)
-            }
-
-            nonisolatedTask.expirationHandler = {
-                handle.cancel()
+            let handle = relayCacheTracker.updateRelays(task: task) { task, result in
+                task?.setTaskCompleted(success: result.isSuccess)
             }
 
             scheduleAppRefreshTask()
