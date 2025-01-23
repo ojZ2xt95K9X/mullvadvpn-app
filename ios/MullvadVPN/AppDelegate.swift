@@ -277,7 +277,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     private func registerAppRefreshTask() {
         let isRegistered = BGTaskScheduler.shared.register(
             forTaskWithIdentifier: BackgroundTask.appRefresh.identifier,
-            using: nil
+            using: DispatchQueue.main
         ) { [self] task in
             nonisolated(unsafe) let nonisolatedTask = task
 
@@ -302,7 +302,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     private func registerKeyRotationTask() {
         let isRegistered = BGTaskScheduler.shared.register(
             forTaskWithIdentifier: BackgroundTask.privateKeyRotation.identifier,
-            using: nil
+            using: DispatchQueue.main
         ) { [self] task in
             nonisolated(unsafe) let nonisolatedTask = task
             let handle = tunnelManager.rotatePrivateKey { [self] error in
@@ -328,7 +328,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     private func registerAddressCacheUpdateTask() {
         let isRegistered = BGTaskScheduler.shared.register(
             forTaskWithIdentifier: BackgroundTask.addressCacheUpdate.identifier,
-            using: nil
+            using: DispatchQueue.main
         ) { [self] task in
             nonisolated(unsafe) let nonisolatedTask = task
 
