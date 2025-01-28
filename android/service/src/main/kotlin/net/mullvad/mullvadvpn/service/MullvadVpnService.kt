@@ -1,11 +1,14 @@
 package net.mullvad.mullvadvpn.service
 
+import android.annotation.SuppressLint
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
+import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import arrow.atomic.AtomicInt
@@ -47,11 +50,20 @@ class MullvadVpnService : TalpidVpnService() {
     // Count number of binds to know if the service is needed. If user actively using the VPN, a
     // bind from the system, should always be present.
     private val bindCount = AtomicInt()
+    lateinit var wakeLock: PowerManager.WakeLock
 
+    @SuppressLint("WakelockTimeout")
     override fun onCreate() {
         super.onCreate()
         Logger.i("MullvadVpnService: onCreate")
 
+        wakeLock =
+            getSystemService<PowerManager>()!!.run {
+                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+                    acquire()
+                    Log.d("MullvadVpnService", "WakeLock acquired")
+                }
+            }
         loadKoinModules(listOf(vpnServiceModule))
         with(getKoin()) {
             // Needed to create all the notification channels
@@ -210,6 +222,8 @@ class MullvadVpnService : TalpidVpnService() {
 
         Logger.i("Enter Idle")
         managementService.enterIdle()
+        wakeLock.release()
+        Log.d("MullvadVpnService", "WakeLock released!")
 
         Logger.i("Shutdown complete")
     }
