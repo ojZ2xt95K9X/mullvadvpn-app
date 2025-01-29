@@ -176,6 +176,8 @@ pub struct AdditionalWireguardConstraints {
 /// Values which affect the choice of relay but are only known at runtime.
 #[derive(Clone, Debug)]
 pub struct RuntimeParameters {
+    /// Whether IPv4 is available
+    pub ipv4: bool,
     /// Whether IPv6 is available
     pub ipv6: bool,
 }
@@ -183,6 +185,18 @@ pub struct RuntimeParameters {
 impl RuntimeParameters {
     /// Return whether a given [query][`RelayQuery`] is valid given the current runtime parameters
     pub fn compatible(&self, query: &RelayQuery) -> bool {
+        if !self.ipv4 {
+            let must_use_ipv4 = matches!(
+                query.wireguard_constraints().ip_version,
+                Constraint::Only(talpid_types::net::IpVersion::V4)
+            );
+            if must_use_ipv4 {
+                log::trace!(
+                    "{query:?} is incompatible with {self:?} due to IPv4 not being available"
+                );
+                return false;
+            }
+        }
         if !self.ipv6 {
             let must_use_ipv6 = matches!(
                 query.wireguard_constraints().ip_version,
@@ -204,7 +218,10 @@ impl RuntimeParameters {
 #[allow(clippy::derivable_impls)]
 impl Default for RuntimeParameters {
     fn default() -> Self {
-        RuntimeParameters { ipv6: false }
+        RuntimeParameters {
+            ipv4: true,
+            ipv6: false,
+        }
     }
 }
 
