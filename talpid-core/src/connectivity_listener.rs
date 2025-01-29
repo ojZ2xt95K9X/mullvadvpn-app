@@ -99,7 +99,10 @@ impl ConnectivityListener {
     /// Return the current offline/connectivity state
     pub fn connectivity(&self) -> Connectivity {
         self.get_is_connected()
-            .map(|connected| Connectivity::Status { connected })
+            .map(|connected| Connectivity::Status {
+                ipv4: connected,
+                ipv6: connected,
+            })
             .unwrap_or_else(|error| {
                 log::error!(
                     "{}",
@@ -173,7 +176,10 @@ pub extern "system" fn Java_net_mullvad_talpid_ConnectivityListener_notifyConnec
     let connected = JNI_TRUE == connected;
 
     if tx
-        .unbounded_send(Connectivity::Status { connected })
+        .unbounded_send(Connectivity::Status {
+            ipv4: connected,
+            ipv6: connected,
+        })
         .is_err()
     {
         log::warn!("Failed to send offline change event");
