@@ -139,17 +139,9 @@ impl ConnectivityListener {
             .z()
             .expect("Calling first method");
 
-        Ok((ipv4, ipv6))
+        log::debug!("Get We have connection {}, {}", ipv4, ipv6);
 
-        /*match is_connected {
-            Ok(JValue::Bool(JNI_TRUE)) => Ok(true),
-            Ok(JValue::Bool(_)) => Ok(false),
-            value => Err(Error::InvalidMethodResult(
-                "ConnectivityListener",
-                "isConnected",
-                format!("{:?}", value),
-            )),
-        }*/
+        Ok((ipv4, ipv6))
     }
 
     /// Return the current DNS servers according to Android
@@ -187,7 +179,7 @@ pub extern "system" fn Java_net_mullvad_talpid_ConnectivityListener_notifyConnec
     is_ipv4: jboolean,
     is_ipv6: jboolean,
 ) {
-    if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
+    /*if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
         env
             .call_method(
                 obj,
@@ -200,8 +192,7 @@ pub extern "system" fn Java_net_mullvad_talpid_ConnectivityListener_notifyConnec
                 log::debug!("addr21312112: {default_ipv4:?}");
             }
         }
-    }
-
+    }*/
 
     let Some(tx) = &*CONNECTIVITY_TX.lock().unwrap() else {
         // No sender has been registered
@@ -212,6 +203,7 @@ pub extern "system" fn Java_net_mullvad_talpid_ConnectivityListener_notifyConnec
     let isIPv4 = JNI_TRUE == is_ipv4;
     let isIPv6 = JNI_TRUE == is_ipv6;
 
+    log::debug!("Callback We have connection {}, {}", isIPv4, isIPv6);
     if tx
         .unbounded_send(Connectivity::Status {
             ipv4: isIPv4,
