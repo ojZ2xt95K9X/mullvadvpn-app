@@ -184,6 +184,7 @@ jobs:
 
       - name: Prepare dummy debug keystore
         run: |
+          mkdir -p $HOME/.android
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
             base64 -d > $HOME/.android/debug.keystore
 
@@ -258,6 +259,7 @@ jobs:
 
       - name: Prepare dummy debug keystore
         run: |
+          mkdir -p $HOME/.android
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
             base64 -d > $HOME/.android/debug.keystore
 
