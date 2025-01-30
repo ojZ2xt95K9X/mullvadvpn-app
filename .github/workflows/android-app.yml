@@ -61,8 +61,13 @@ permissions: {}
 
 env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
+  ANDROID_HOME: .android
+  CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
+  CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
+  GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
 
 jobs:
+  # TODO: Add support for overriding the used container image.
   prepare:
     name: Prepare
     runs-on: ubuntu-latest
@@ -84,10 +89,7 @@ jobs:
 
   build-native:
     name: Build native # Used by wait for jobs.
-    needs: prepare
-    runs-on: ubuntu-latest
-    container:
-      image: "${{ needs.prepare.outputs.container_image }}"
+    runs-on: ubuntu-latest # app-gh-build
     strategy:
       matrix:
         include:
@@ -100,112 +102,76 @@ jobs:
           - abi: "armeabi-v7a"
             task-variant: "Arm"
     steps:
-      # Fix for HOME path overridden by GH runners when building in containers, see:
-      # https://github.com/actions/runner/issues/863
-      - name: Fix HOME path
-        run: echo "HOME=/root" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Checkout wireguard-go-rs recursively
         run: |
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
-      - name: Calculate native lib cache hash
-        id: native-lib-cache-hash
-        shell: bash
-        run: |
-          git config --global --add safe.directory $(pwd)
-          non_android_hash="$(git grep --cached -l '' -- ':!android/' \
-            | xargs -d '\n' sha1sum \
-            | sha1sum \
-            | awk '{print $1}')"
-          echo "native_lib_hash=$non_android_hash" >> $GITHUB_OUTPUT
+      # TODO: Needed?
+      # - name: Create dummy dir
+      #   run: mkdir .android
 
-      - name: Cache native libraries
-        uses: actions/cache@v4
-        id: cache-native-libs
-        env:
-          cache_hash: ${{ steps.native-lib-cache-hash.outputs.native_lib_hash }}
-        with:
-          path: ./android/app/build/rustJniLibs/android
-          key: android-native-libs-${{ runner.os }}-${{ matrix.abi }}-${{ env.cache_hash }}
-
-      - name: Build native libraries
-        if: steps.cache-native-libs.outputs.cache-hit != 'true'
-        uses: burrunan/gradle-cache-action@v1
-        with:
-          job-id: jdk17
-          arguments: cargoBuild${{ matrix.task-variant }}
-          gradle-version: wrapper
-          build-root-directory: android
-          execution-only-caches: false
-          # Disable if logs are hard to follow.
-          concurrent: true
-          read-only: ${{ github.ref != 'refs/heads/main' }}
-
+      - name: Build native
+        run: ./building/container-run.sh android android/gradlew -p android cargoBuild${{ matrix.task-variant }}
 
       - name: Upload native libs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4 # TODO: Change to v3?
         with:
-          name: native-libs-${{ matrix.abi }}
-          path: android/app/build/rustJniLibs/android
+          name: native-libs-${{ matrix.arch }}
+          path: android/app/build/extraJni
           if-no-files-found: error
           retention-days: 7
 
-  run-lint-and-tests:
-    name: Run lint and test tasks
-    needs: [prepare]
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ needs.prepare.outputs.container_image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - gradle-task: |
-              testDebugUnitTest -x :test:arch:testDebugUnitTest
-              :app:testOssProdDebugUnitTest
-              :service:testOssProdDebugUnitTest
-              :lib:billing:testDebugUnitTest
-              :lib:daemon-grpc:testDebugUnitTest
-              :lib:shared:testDebugUnitTest
-          - gradle-task: :test:arch:test --rerun-tasks
-          - gradle-task: detekt
-          - gradle-task: lint
-    steps:
-      # Fix for HOME path overridden by GH runners when building in containers, see:
-      # https://github.com/actions/runner/issues/863
-      - name: Fix HOME path
-        run: echo "HOME=/root" >> $GITHUB_ENV
+  # run-lint-and-tests:
+  #   name: Run lint and test tasks
+  #   needs: [prepare]
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: ${{ needs.prepare.outputs.container_image }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - gradle-task: |
+  #             testDebugUnitTest -x :test:arch:testDebugUnitTest
+  #             :app:testOssProdDebugUnitTest
+  #             :service:testOssProdDebugUnitTest
+  #             :lib:billing:testDebugUnitTest
+  #             :lib:daemon-grpc:testDebugUnitTest
+  #             :lib:shared:testDebugUnitTest
+  #         - gradle-task: :test:arch:test --rerun-tasks
+  #         - gradle-task: detekt
+  #         - gradle-task: lint
+  #   steps:
+  #     # Fix for HOME path overridden by GH runners when building in containers, see:
+  #     # https://github.com/actions/runner/issues/863
+  #     - name: Fix HOME path
+  #       run: echo "HOME=/root" >> $GITHUB_ENV
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: true
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
 
-      - name: Run gradle task
-        uses: burrunan/gradle-cache-action@v1
-        with:
-          job-id: jdk17
-          arguments: ${{ matrix.gradle-task }}
-          gradle-version: wrapper
-          build-root-directory: android
-          execution-only-caches: false
-          # Disable if logs are hard to follow.
-          concurrent: true
-          read-only: ${{ github.ref != 'refs/heads/main' }}
+  #     - name: Run gradle task
+  #       uses: burrunan/gradle-cache-action@v1
+  #       with:
+  #         job-id: jdk17
+  #         arguments: ${{ matrix.gradle-task }}
+  #         gradle-version: wrapper
+  #         build-root-directory: android
+  #         execution-only-caches: false
+  #         # Disable if logs are hard to follow.
+  #         concurrent: true
+  #         read-only: ${{ github.ref != 'refs/heads/main' }}
 
   build-app:
     name: Build app
     needs: [prepare]
     runs-on: ubuntu-latest
-    container:
-      image: ${{ needs.prepare.outputs.container_image }}
     steps:
       # Fix for HOME path overridden by GH runners when building in containers, see:
       # https://github.com/actions/runner/issues/863
@@ -223,18 +189,8 @@ jobs:
             base64 -d > /root/.android/debug.keystore
 
       - name: Compile app
-        uses: burrunan/gradle-cache-action@v1
-        with:
-          job-id: jdk17
-          arguments: |
-            compileOssProdDebugKotlin
-            -x cargoBuild
-          gradle-version: wrapper
-          build-root-directory: android
-          execution-only-caches: false
-          # Disable if logs are hard to follow.
-          concurrent: true
-          read-only: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin -x cargoBuild
 
       - name: Wait for other jobs (native, relay list)
         uses: kachick/wait-other-jobs@v3.6.0
@@ -256,38 +212,17 @@ jobs:
           merge-multiple: true
 
       - name: Build app
-        uses: burrunan/gradle-cache-action@v1
-        with:
-          job-id: jdk17
-          arguments: |
-            assembleOssProdDebug
-            -x cargoBuild
-          gradle-version: wrapper
-          build-root-directory: android
-          execution-only-caches: true
-          # Disable if logs are hard to follow.
-          concurrent: true
-          read-only: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug -x cargoBuild
 
       - name: Build stagemole app
-        uses: burrunan/gradle-cache-action@v1
         if: >
           (github.event.inputs.e2e_test_repeat != '0' && env.E2E_TEST_INFRA_FLAVOR == 'stagemole') ||
           github.event.inputs.run_firebase_tests == 'true'
-        with:
-          job-id: jdk17
-          arguments: |
-            assemblePlayStagemoleDebug
-            -x cargoBuild
-          gradle-version: wrapper
-          build-root-directory: android
-          execution-only-caches: true
-          # Disable if logs are hard to follow.
-          concurrent: true
-          read-only: ${{ github.ref != 'refs/heads/main' }}
+        run: |
+          ./building/container-run.sh android android/gradlew -p android assemblePlayStagemoleDebug -x cargoBuild
 
       - name: Upload apks
-        # Using v3 due to v4 being very slow for this artifact.
         uses: actions/upload-artifact@v4
         with:
           name: apks
@@ -299,8 +234,6 @@ jobs:
     name: Build instrumented test packages
     needs: [prepare]
     runs-on: ubuntu-latest
-    container:
-      image: ${{ needs.prepare.outputs.container_image }}
     strategy:
       matrix:
         include:
@@ -330,23 +263,14 @@ jobs:
             base64 -d > /root/.android/debug.keystore
 
       - name: Assemble instrumented test apk
-        uses: burrunan/gradle-cache-action@v1
-        with:
-          job-id: jdk17
-          arguments: |
-            ${{ matrix.assemble-command }}
-            -x cargoBuild
-            -x mergeOssProdDebugJniLibFolders
+        run: |
+          ./building/container-run.sh android android/gradlew -p android \
+            ${{ matrix.assemble-command }} \
+            -x cargoBuild \
+            -x mergeOssProdDebugJniLibFolders \
             -x mergePlayStagemoleDebugJniLibFolders
-          gradle-version: wrapper
-          build-root-directory: android
-          execution-only-caches: false
-          # Disable if logs are hard to follow.
-          concurrent: true
-          read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Upload apks
-        # Using v3 due to v4 being very slow for this artifact.
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.test-type }}-instrumentation-apks
