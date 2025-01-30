@@ -185,7 +185,7 @@ jobs:
       - name: Prepare dummy debug keystore
         run: |
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > /root/.android/debug.keystore
+            base64 -d > $HOME/.android/debug.keystore
 
       - name: Compile app
         run: |
@@ -259,7 +259,7 @@ jobs:
       - name: Prepare dummy debug keystore
         run: |
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > /root/.android/debug.keystore
+            base64 -d > $HOME/.android/debug.keystore
 
       - name: Assemble instrumented test apk
         run: |
