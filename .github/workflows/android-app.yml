@@ -60,7 +60,7 @@ permissions: {}
 
 env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
-  DEBUG_KEYSTORE_HOST_PATH: $HOME/debug.keystore
+  DEBUG_KEYSTORE_HOST_PATH: ${{ runner.home }}
   CARGO_TARGET_VOLUME_NAME: cargo-target-1 #${{ runner.name }}
   CARGO_REGISTRY_VOLUME_NAME: cargo-cache-1 #${{ runner.name }}
   GRADLE_CACHE_VOLUME_NAME: gradle-cache-1 #${{ runner.name }}
