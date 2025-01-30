@@ -174,16 +174,13 @@ jobs:
           submodules: true
 
       - name: Prepare dummy debug keystore
-        env:
-          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         run: |
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > $DEBUG_KEYSTORE_HOST_PATH
+            base64 -d > ${{ runner.temp }}/debug.keystore
 
       - name: Compile app
-        env:
-          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         run: |
+          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin -x cargoBuild
 
       - name: Wait for other jobs (native, relay list)
@@ -206,18 +203,16 @@ jobs:
           merge-multiple: true
 
       - name: Build app
-        env:
-          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         run: |
+          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug -x cargoBuild
 
       - name: Build stagemole app
-        env:
-          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         if: >
           (github.event.inputs.e2e_test_repeat != '0' && env.E2E_TEST_INFRA_FLAVOR == 'stagemole') ||
           github.event.inputs.run_firebase_tests == 'true'
         run: |
+          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android assemblePlayStagemoleDebug -x cargoBuild
 
       - name: Upload apks
@@ -232,8 +227,6 @@ jobs:
     name: Build instrumented test packages
     needs: prepare
     runs-on: ubuntu-latest
-    env:
-      DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
     strategy:
       matrix:
         include:
@@ -254,12 +247,12 @@ jobs:
 
       - name: Prepare dummy debug keystore
         run: |
-          mkdir -p $HOME/.android
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > $DEBUG_KEYSTORE_HOST_PATH
+            base64 -d > ${{ runner.temp }}/debug.keystore
 
       - name: Assemble instrumented test apk
         run: |
+          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android \
             ${{ matrix.assemble-command }} \
             -x cargoBuild \
