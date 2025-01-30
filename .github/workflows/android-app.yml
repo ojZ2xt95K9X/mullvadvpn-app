@@ -120,8 +120,8 @@ jobs:
       - name: Upload native libs
         uses: actions/upload-artifact@v4 # TODO: Change to v3?
         with:
-          name: native-libs-${{ matrix.arch }}
-          path: android/app/build/extraJni
+          name: native-libs-${{ matrix.abi }}
+          path: android/app/build/rustJniLibs/android
           if-no-files-found: error
           retention-days: 7
 
