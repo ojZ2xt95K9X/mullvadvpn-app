@@ -60,7 +60,6 @@ permissions: {}
 
 env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
-  DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}
   CARGO_TARGET_VOLUME_NAME: cargo-target-1 #${{ runner.name }}
   CARGO_REGISTRY_VOLUME_NAME: cargo-cache-1 #${{ runner.name }}
   GRADLE_CACHE_VOLUME_NAME: gradle-cache-1 #${{ runner.name }}
@@ -168,12 +167,9 @@ jobs:
     name: Build app
     needs: prepare
     runs-on: ubuntu-latest
+    env:
+      DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
     steps:
-      # Fix for HOME path overridden by GH runners when building in containers, see:
-      # https://github.com/actions/runner/issues/863
-      # - name: Fix HOME path
-      #   run: echo "HOME=/root" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -230,6 +226,8 @@ jobs:
     name: Build instrumented test packages
     needs: prepare
     runs-on: ubuntu-latest
+    env:
+      DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
     strategy:
       matrix:
         include:
@@ -243,11 +241,6 @@ jobs:
             assemble-command: :test:e2e:assemble
             artifact-path: android/test/e2e/build/outputs/apk
     steps:
-      # Fix for HOME path overridden by GH runners when building in containers, see:
-      # https://github.com/actions/runner/issues/863
-      # - name: Fix HOME path
-      #   run: echo "HOME=/root" >> $GITHUB_ENV
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
