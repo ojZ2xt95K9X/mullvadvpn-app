@@ -62,9 +62,9 @@ permissions: {}
 env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
   ANDROID_HOME: .android
-  CARGO_TARGET_VOLUME_NAME: cargo-target-${{ runner.name }}
-  CARGO_REGISTRY_VOLUME_NAME: cargo-cache-${{ runner.name }}
-  GRADLE_CACHE_VOLUME_NAME: gradle-cache-${{ runner.name }}
+  CARGO_TARGET_VOLUME_NAME: cargo-target-1 #${{ runner.name }}
+  CARGO_REGISTRY_VOLUME_NAME: cargo-cache-1 #${{ runner.name }}
+  GRADLE_CACHE_VOLUME_NAME: gradle-cache-1 #${{ runner.name }}
 
 jobs:
   # TODO: Add support for overriding the used container image.
