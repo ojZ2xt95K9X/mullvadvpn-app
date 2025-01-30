@@ -167,8 +167,6 @@ jobs:
     name: Build app
     needs: prepare
     runs-on: ubuntu-latest
-    env:
-      DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -176,11 +174,15 @@ jobs:
           submodules: true
 
       - name: Prepare dummy debug keystore
+        env:
+          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         run: |
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
             base64 -d > $DEBUG_KEYSTORE_HOST_PATH
 
       - name: Compile app
+        env:
+          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         run: |
           ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin -x cargoBuild
 
@@ -204,10 +206,14 @@ jobs:
           merge-multiple: true
 
       - name: Build app
+        env:
+          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         run: |
           ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug -x cargoBuild
 
       - name: Build stagemole app
+        env:
+          DEBUG_KEYSTORE_HOST_PATH: ${{ runner.temp }}/debug.keystore
         if: >
           (github.event.inputs.e2e_test_repeat != '0' && env.E2E_TEST_INFRA_FLAVOR == 'stagemole') ||
           github.event.inputs.run_firebase_tests == 'true'
