@@ -14,6 +14,7 @@ REPO_MOUNT_TARGET="/build"
 CARGO_TARGET_VOLUME_NAME=${CARGO_TARGET_VOLUME_NAME:-"cargo-target"}
 CARGO_REGISTRY_VOLUME_NAME=${CARGO_REGISTRY_VOLUME_NAME:-"cargo-registry"}
 GRADLE_CACHE_VOLUME_NAME=${GRADLE_CACHE_VOLUME_NAME:-"gradle-cache"}
+DEBUG_KEYSTORE_HOST_PATH=${DEBUG_KEYSTORE_HOST_PATH:-""}
 ANDROID_CREDENTIALS_DIR=${ANDROID_CREDENTIALS_DIR:-""}
 CONTAINER_RUNNER=${CONTAINER_RUNNER:-"podman"}
 # Temporarily do not use mold for linking by default due to it causing build errors.
@@ -35,6 +36,10 @@ case ${1-:""} in
     android)
         container_image_name=$(cat "$SCRIPT_DIR/android-container-image.txt")
         optional_gradle_cache_volume=(-v "$GRADLE_CACHE_VOLUME_NAME:/root/.gradle:Z")
+
+        if [ -n "$DEBUG_KEYSTORE_HOST_PATH" ]; then
+            optional_debug_keystore_volume=(-v "$DEBUG_KEYSTORE_HOST_PATH:/root/.android/debug.keystore:Z")
+        fi
 
         if [ -n "$ANDROID_CREDENTIALS_DIR" ]; then
             optional_android_credentials_volume=(-v "$ANDROID_CREDENTIALS_DIR:$REPO_MOUNT_TARGET/android/credentials:Z")
@@ -58,5 +63,6 @@ exec "$CONTAINER_RUNNER" run --rm -it \
     -v "$CARGO_TARGET_VOLUME_NAME:/cargo-target:Z" \
     -v "$CARGO_REGISTRY_VOLUME_NAME:/root/.cargo/registry:Z" \
     "${optional_gradle_cache_volume[@]}" \
+    "${optional_debug_keystore_volume[@]}" \
     "${optional_android_credentials_volume[@]}" \
     "$container_image_name" bash -c "$optional_mold $*"

@@ -60,7 +60,7 @@ permissions: {}
 
 env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
-  ANDROID_HOME: .android
+  DEBUG_KEYSTORE_HOST_PATH: $HOME/debug.keystore
   CARGO_TARGET_VOLUME_NAME: cargo-target-1 #${{ runner.name }}
   CARGO_REGISTRY_VOLUME_NAME: cargo-cache-1 #${{ runner.name }}
   GRADLE_CACHE_VOLUME_NAME: gradle-cache-1 #${{ runner.name }}
@@ -109,10 +109,6 @@ jobs:
         run: |
           git config --global --add safe.directory '*'
           git submodule update --init --recursive --depth=1 wireguard-go-rs
-
-      # TODO: Needed?
-      # - name: Create dummy dir
-      #   run: mkdir .android
 
       - name: Build native
         run: ./building/container-run.sh android android/gradlew -p android cargoBuild${{ matrix.task-variant }}
@@ -185,9 +181,8 @@ jobs:
 
       - name: Prepare dummy debug keystore
         run: |
-          mkdir -p $HOME/.android
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > $HOME/.android/debug.keystore
+            base64 -d > $DEBUG_KEYSTORE_HOST_PATH
 
       - name: Compile app
         run: |
@@ -262,7 +257,7 @@ jobs:
         run: |
           mkdir -p $HOME/.android
           echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > $HOME/.android/debug.keystore
+            base64 -d > $DEBUG_KEYSTORE_HOST_PATH
 
       - name: Assemble instrumented test apk
         run: |
