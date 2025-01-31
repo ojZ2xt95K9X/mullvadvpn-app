@@ -475,6 +475,7 @@ fn create_device_error(error: rest::Error) -> Option<CreateDeviceError> {
     match error {
         rest::Error::ApiError(_status, ref code) => match code.as_str() {
             mullvad_api::MAX_DEVICES_REACHED => Some(CreateDeviceError::MaxDevicesReached),
+            mullvad_api::INVALID_ACCOUNT => Some(CreateDeviceError::InvalidDevice),
             _ => None,
         },
         // TODO: Handle transport errors gracefully
