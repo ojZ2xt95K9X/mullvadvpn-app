@@ -2,6 +2,7 @@ package net.mullvad.mullvadvpn.lib.daemon.grpc
 
 import android.net.LocalSocketAddress
 import arrow.core.Either
+import arrow.core.flatten
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import arrow.optics.copy
@@ -123,7 +124,6 @@ import net.mullvad.mullvadvpn.lib.model.WebsiteAuthToken
 import net.mullvad.mullvadvpn.lib.model.WireguardEndpointData as ModelWireguardEndpointData
 import net.mullvad.mullvadvpn.lib.model.addresses
 import net.mullvad.mullvadvpn.lib.model.customOptions
-import net.mullvad.mullvadvpn.lib.model.enabled
 import net.mullvad.mullvadvpn.lib.model.entryLocation
 import net.mullvad.mullvadvpn.lib.model.isMultihopEnabled
 import net.mullvad.mullvadvpn.lib.model.location
@@ -323,20 +323,17 @@ class ManagementService(
             .mapEmpty()
 
     suspend fun loginAccount(accountNumber: AccountNumber): Either<LoginAccountError, Unit> =
-        Either.catch { grpc.loginAccount(StringValue.of(accountNumber.value)) }
-            .mapLeftStatus {
-                when (it.status.code) {
-                    Status.Code.UNAUTHENTICATED -> LoginAccountError.InvalidAccount
-                    Status.Code.RESOURCE_EXHAUSTED ->
-                        LoginAccountError.MaxDevicesReached(accountNumber)
-                    Status.Code.UNAVAILABLE -> LoginAccountError.RpcError
-                    else -> {
-                        Logger.e("Unknown login account error")
-                        LoginAccountError.Unknown(it)
-                    }
-                }
+        Either.catch {
+                grpc
+                    .loginAccount(
+                        ManagementInterface.AccountNumber.newBuilder()
+                            .setValue(accountNumber.value)
+                            .build()
+                    )
+                    .toDomain(accountNumber)
             }
-            .mapEmpty()
+            .mapLeft { LoginAccountError.Unknown(it) }
+            .flatten()
 
     suspend fun clearAccountHistory(): Either<ClearAccountHistoryError, Unit> =
         Either.catch { grpc.clearAccountHistory(Empty.getDefaultInstance()) }
@@ -378,8 +375,8 @@ class ManagementService(
 
     suspend fun createAccount(): Either<CreateAccountError, AccountNumber> =
         Either.catch {
-                val accountNumberStringValue = grpc.createNewAccount(Empty.getDefaultInstance())
-                AccountNumber(accountNumberStringValue.value)
+                val accountNumber = grpc.createNewAccount(Empty.getDefaultInstance())
+                AccountNumber(accountNumber.value)
             }
             .onLeft { Logger.e("Create account error") }
             .mapLeft(CreateAccountError::Unknown)

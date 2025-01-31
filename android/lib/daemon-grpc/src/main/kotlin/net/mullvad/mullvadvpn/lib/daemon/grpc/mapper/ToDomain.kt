@@ -2,11 +2,15 @@
 
 package net.mullvad.mullvadvpn.lib.daemon.grpc.mapper
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import io.grpc.ConnectivityState
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.util.UUID
 import mullvad_daemon.management_interface.ManagementInterface
+import mullvad_daemon.management_interface.ManagementInterface.LoginResult
 import net.mullvad.mullvadvpn.lib.daemon.grpc.GrpcConnectivityState
 import net.mullvad.mullvadvpn.lib.daemon.grpc.RelayNameComparator
 import net.mullvad.mullvadvpn.lib.model.AccountData
@@ -42,6 +46,7 @@ import net.mullvad.mullvadvpn.lib.model.ErrorStateCause.TunnelParameterError
 import net.mullvad.mullvadvpn.lib.model.FeatureIndicator
 import net.mullvad.mullvadvpn.lib.model.GeoIpLocation
 import net.mullvad.mullvadvpn.lib.model.GeoLocationId
+import net.mullvad.mullvadvpn.lib.model.LoginAccountError
 import net.mullvad.mullvadvpn.lib.model.Mtu
 import net.mullvad.mullvadvpn.lib.model.ObfuscationEndpoint
 import net.mullvad.mullvadvpn.lib.model.ObfuscationMode
@@ -689,4 +694,21 @@ internal fun ManagementInterface.FeatureIndicator.toDomain() =
         ManagementInterface.FeatureIndicator.CUSTOM_MSS_FIX,
         ManagementInterface.FeatureIndicator.UNRECOGNIZED ->
             error("Feature not supported ${this.name}")
+    }
+
+internal fun LoginResult.LoginError.toDomain(accountNumber: AccountNumber): LoginAccountError =
+    when (errorCase) {
+        LoginResult.LoginError.ErrorCase.MAX_DEVICE_REACHED ->
+            LoginAccountError.MaxDevicesReached(accountNumber = accountNumber)
+        LoginResult.LoginError.ErrorCase.INVALID_ACCOUNT -> LoginAccountError.InvalidAccount
+        LoginResult.LoginError.ErrorCase.ERROR_NOT_SET -> throw RuntimeException("Unsupported gRPC")
+    }
+
+internal fun LoginResult.toDomain(accountNumber: AccountNumber): Either<LoginAccountError, Unit> =
+    when (resultCase) {
+        ManagementInterface.LoginResult.ResultCase.LOGIN_SUCCESS -> Unit.right()
+        ManagementInterface.LoginResult.ResultCase.LOGIN_ERROR ->
+            loginError.toDomain(accountNumber).left()
+        ManagementInterface.LoginResult.ResultCase.RESULT_NOT_SET ->
+            throw RuntimeException("This should not happen")
     }

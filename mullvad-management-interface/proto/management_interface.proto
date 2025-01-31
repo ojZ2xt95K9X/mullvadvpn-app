@@ -56,7 +56,7 @@ service ManagementService {
   rpc ClearAllRelayOverrides(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
   // Account management
-  rpc CreateNewAccount(google.protobuf.Empty) returns (google.protobuf.StringValue) {}
+  rpc CreateNewAccount(google.protobuf.Empty) returns (AccountNumber) {}
   rpc LoginAccount(AccountNumber) returns (LoginResult) {}
   rpc LogoutAccount(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc GetAccountData(google.protobuf.StringValue) returns (AccountData) {}
@@ -431,7 +431,7 @@ message CustomProxy {
 
 // Account identifier used for authentication.
 message AccountNumber {
-     string account_number = 1;
+  string value = 1;
 }
 
 message LoginResult {
