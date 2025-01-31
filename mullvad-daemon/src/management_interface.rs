@@ -1,4 +1,5 @@
 use crate::{account_history, device, version_check, DaemonCommand, DaemonCommandSender};
+use core::panic;
 use futures::{
     channel::{mpsc, oneshot},
     StreamExt,
@@ -457,18 +458,24 @@ impl ManagementService for ManagementServiceImpl {
         self.send_command_to_daemon(DaemonCommand::LoginAccount(tx, account_number))?;
 
         // TODO: Find a way to cut down on the loc. Please.
-        let login_response = {
-            let login_success = types::login_result::LoginSuccess {};
-            let login_success = types::login_result::Result::LoginSuccess(login_success);
-            types::LoginResult {
-                result: Some(login_success),
+        // let login_response = { };
+
+        let result = self.wait_for_result(rx).await?;
+        let result = match result {
+            Ok(()) => {
+                let login_success = types::login_result::LoginSuccess {};
+                types::login_result::Result::LoginSuccess(login_success)
+            }
+            Err(login_error) => {
+                types::login_result::Result::LoginError(map_login_error(login_error))
             }
         };
 
-        self.wait_for_result(rx)
-            .await?
-            .map(|_| Response::new(login_response))
-            .map_err(map_daemon_error)
+        let client_response = Response::new(types::LoginResult {
+            result: Some(result),
+        });
+
+        Ok(client_response)
     }
 
     async fn logout_account(&self, _: Request<()>) -> ServiceResult<()> {
@@ -1303,7 +1310,6 @@ fn map_daemon_error(error: crate::Error) -> Status {
         DaemonError::RestError(error) => map_rest_error(&error),
         DaemonError::SettingsError(error) => Status::from(error),
         DaemonError::AlreadyLoggedIn => Status::already_exists(error.to_string()),
-        DaemonError::LoginError(error) => map_device_error(&error),
         DaemonError::LogoutError(error) => map_device_error(&error),
         DaemonError::KeyRotationError(error) => map_device_error(&error),
         DaemonError::ListDevicesError(error) => map_device_error(&error),
@@ -1318,6 +1324,32 @@ fn map_daemon_error(error: crate::Error) -> Status {
         }
         DaemonError::VersionCheckError(error) => map_version_check_error(error),
         error => Status::unknown(error.to_string()),
+    }
+}
+
+/// TODO: Document mee
+fn map_login_error(error: device::LoginError) -> types::login_result::LoginError {
+    use device::LoginError;
+    use types::login_result;
+    use types::login_result::login_error;
+
+    let login_error = match error {
+        LoginError::AlreadyLoggedIn => {
+            panic!("AlreadyLoggedIn not represented as gRPC value yet")
+        }
+        LoginError::CreateDevice(create_device_error) => match create_device_error {
+            device::CreateDeviceError::MaxDevicesReached => {
+                let value = login_error::MaxDeviceReached {};
+                login_error::Error::MaxDeviceReached(value)
+            }
+            device::CreateDeviceError::InvalidDevice => {
+                let value = login_error::InvalidAccount {};
+                login_error::Error::InvalidAccount(value)
+            }
+        },
+    };
+    login_result::LoginError {
+        error: Some(login_error),
     }
 }
 

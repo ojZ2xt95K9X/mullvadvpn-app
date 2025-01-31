@@ -133,9 +133,6 @@ pub enum Error {
     #[error("Failed to start account manager")]
     LoadAccountManager(#[source] device::Error),
 
-    #[error("Failed to log in to account")]
-    LoginError(#[source] device::Error),
-
     #[error("Failed to log out of account")]
     LogoutError(#[source] device::Error),
 
@@ -241,7 +238,7 @@ pub enum DaemonCommand {
     /// updated.
     UpdateRelayLocations,
     /// Log in with a given account and create a new device.
-    LoginAccount(ResponseTx<(), Error>, AccountNumber),
+    LoginAccount(ResponseTx<(), device::LoginError>, AccountNumber),
     /// Log out of the current account and remove the device, if they exist.
     LogoutAccount(ResponseTx<(), Error>),
     /// Return the current device configuration.
@@ -1662,13 +1659,16 @@ impl Daemon {
                 account_manager
                     .login(token.clone())
                     .await
-                    .map_err(|error| {
+                    .inspect_err(|error| {
                         log::error!(
                             "{}",
                             error.display_chain_with_msg("Creating new account failed")
                         );
-                        Error::LoginError(error)
-                    })?;
+
+                        //Error::LoginError(error)
+                    })
+                    // TODO: Do not unwrap!
+                    .unwrap();
                 Ok(token)
             };
             Self::oneshot_send(tx, result.await, "create new account");
@@ -1731,7 +1731,7 @@ impl Daemon {
         self.relay_list_updater.update().await;
     }
 
-    fn on_login_account(&mut self, tx: ResponseTx<(), Error>, account_number: String) {
+    fn on_login_account(&mut self, tx: ResponseTx<(), device::LoginError>, account_number: String) {
         let account_manager = self.account_manager.clone();
         let availability = self.api_runtime.availability_handle();
         tokio::spawn(async move {
@@ -1739,9 +1739,8 @@ impl Daemon {
                 account_manager
                     .login(account_number)
                     .await
-                    .map_err(|error| {
+                    .inspect_err(|error| {
                         log::error!("{}", error.display_chain_with_msg("Login failed"));
-                        Error::LoginError(error)
                     })?;
 
                 availability.resume_background();

@@ -11,7 +11,7 @@ use mullvad_types::{
 };
 use talpid_types::net::wireguard::PrivateKey;
 
-use super::{Error, PrivateAccountAndDevice, PrivateDevice};
+use super::{CreateDeviceError, Error, PrivateAccountAndDevice, PrivateDevice};
 use mullvad_api::{
     availability::ApiAvailability,
     rest::{self, MullvadRestHandle},
@@ -44,7 +44,7 @@ impl DeviceService {
     pub fn generate_for_account(
         &self,
         account_number: AccountNumber,
-    ) -> impl Future<Output = Result<PrivateAccountAndDevice, Error>> + Send {
+    ) -> impl Future<Output = Result<PrivateAccountAndDevice, CreateDeviceError>> + Send {
         let private_key = PrivateKey::new_from_random();
         let pubkey = private_key.public_key();
 
@@ -58,7 +58,9 @@ impl DeviceService {
                 RETRY_ACTION_STRATEGY,
             )
             .await
-            .map_err(map_rest_error)?;
+            .map_err(|error|
+                    // TODO: Handle non-domain errors gracefully
+                    create_device_error(error).unwrap())?;
 
             Ok(PrivateAccountAndDevice {
                 account_number,
@@ -74,10 +76,12 @@ impl DeviceService {
         }
     }
 
+    /// TODO: Rename mee
+    /// 'create_device[_with_backoff]'?
     pub async fn generate_for_account_with_backoff(
         &self,
         account_number: AccountNumber,
-    ) -> Result<PrivateAccountAndDevice, Error> {
+    ) -> Result<PrivateAccountAndDevice, CreateDeviceError> {
         let private_key = PrivateKey::new_from_random();
         let pubkey = private_key.public_key();
 
@@ -90,7 +94,10 @@ impl DeviceService {
             RETRY_BACKOFF_STRATEGY,
         )
         .await
-        .map_err(map_rest_error)?;
+        .map_err(|error|
+            // TODO:: Handle non-domain errors gracefully
+            create_device_error(error).unwrap()
+        )?;
 
         Ok(PrivateAccountAndDevice {
             account_number,
@@ -459,5 +466,18 @@ fn map_rest_error(error: rest::Error) -> Error {
             _ => Error::OtherRestError(error),
         },
         error => Error::OtherRestError(error),
+    }
+}
+
+/// Map generic [rest:Error] into errors that *should* only happen when invoking
+///
+fn create_device_error(error: rest::Error) -> Option<CreateDeviceError> {
+    match error {
+        rest::Error::ApiError(_status, ref code) => match code.as_str() {
+            mullvad_api::MAX_DEVICES_REACHED => Some(CreateDeviceError::MaxDevicesReached),
+            _ => None,
+        },
+        // TODO: Handle transport errors gracefully
+        error => None,
     }
 }

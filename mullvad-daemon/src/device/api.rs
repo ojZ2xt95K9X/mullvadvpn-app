@@ -6,7 +6,7 @@ use futures::{future::FusedFuture, Future};
 use mullvad_types::account::PlayPurchasePaymentToken;
 use mullvad_types::{account::VoucherSubmission, device::Device, wireguard::WireguardData};
 
-use super::{Error, PrivateAccountAndDevice, ResponseTx};
+use super::{Error, LoginError, PrivateAccountAndDevice, ResponseTx, ResponseTxR};
 
 pub(crate) struct CurrentApiCall {
     current_call: Option<Call>,
@@ -21,7 +21,11 @@ impl CurrentApiCall {
         self.current_call = None;
     }
 
-    pub fn set_login(&mut self, login: ApiCall<PrivateAccountAndDevice>, tx: ResponseTx<()>) {
+    pub fn set_login(
+        &mut self,
+        login: ApiCallR<PrivateAccountAndDevice, LoginError>,
+        tx: ResponseTxR<(), LoginError>,
+    ) {
         self.current_call = Some(Call::Login(login, Some(tx)));
     }
 
@@ -123,8 +127,14 @@ impl FusedFuture for CurrentApiCall {
 
 type ApiCall<T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send>>;
 
+// TODO: Document mee
+type ApiCallR<T, E> = Pin<Box<dyn Future<Output = Result<T, E>> + Send>>;
+
 enum Call {
-    Login(ApiCall<PrivateAccountAndDevice>, Option<ResponseTx<()>>),
+    Login(
+        ApiCallR<PrivateAccountAndDevice, LoginError>,
+        Option<ResponseTxR<(), LoginError>>,
+    ),
     TimerKeyRotation(ApiCall<WireguardData>),
     OneshotKeyRotation(ApiCall<WireguardData>),
     Validation(ApiCall<Device>),
@@ -200,7 +210,10 @@ impl futures::Future for Call {
 }
 
 pub(crate) enum ApiResult {
-    Login(Result<PrivateAccountAndDevice, Error>, ResponseTx<()>),
+    Login(
+        Result<PrivateAccountAndDevice, LoginError>,
+        ResponseTxR<(), LoginError>,
+    ),
     Rotation(Result<WireguardData, Error>),
     Validation(Result<Device, Error>),
     VoucherSubmission(

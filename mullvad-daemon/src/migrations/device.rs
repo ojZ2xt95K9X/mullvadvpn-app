@@ -80,6 +80,8 @@ async fn cache_from_wireguard_key(
         if device.pubkey == wg_data.private_key.public_key() {
             return Ok(PrivateAccountAndDevice {
                 account_number,
+                // NOTE: This unwrap _should_ be fine because we have checked that the local
+                // wireguard key matches the registered public key of this device.
                 device: PrivateDevice::try_from_device(device, wg_data)?,
             });
         }
@@ -92,7 +94,7 @@ async fn cache_from_account(
     service: DeviceService,
     account_number: AccountNumber,
 ) -> Result<PrivateAccountAndDevice, device::Error> {
-    timeout(
+    let result = timeout(
         TIMEOUT,
         service.generate_for_account_with_backoff(account_number),
     )
@@ -106,5 +108,6 @@ async fn cache_from_account(
             "{}",
             error.display_chain_with_msg("Failed to generate new device for account")
         );
-    })
+    })?;
+    Ok(result)
 }

@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use futures::{
     channel::{mpsc, oneshot},
     stream::StreamExt,
+    TryFutureExt,
 };
 
 use mullvad_api::rest;
@@ -78,6 +79,31 @@ pub enum Error {
     AccountChange,
     #[error("The account manager is down")]
     AccountManagerDown,
+
+    // TODO: fugly
+    #[error(transparent)]
+    Login(#[from] LoginError),
+
+    // TODO: fugly
+    #[error(transparent)]
+    CreateDevice(#[from] CreateDeviceError),
+}
+
+#[derive(thiserror::Error, Debug, Clone)]
+pub enum LoginError {
+    #[error("An account is already set")]
+    AlreadyLoggedIn,
+
+    #[error(transparent)]
+    CreateDevice(#[from] CreateDeviceError),
+}
+
+#[derive(thiserror::Error, Debug, Clone)]
+pub enum CreateDeviceError {
+    #[error("The account already has a maximum number of devices")]
+    MaxDevicesReached,
+    #[error("Registered wireguard key does not belong to local device")]
+    InvalidDevice,
 }
 
 macro_rules! impl_into_arc_err {
@@ -196,11 +222,13 @@ impl PrivateDevice {
     /// Construct a private device from a `WireguardData` and a `Device`. Fails if the pubkey of
     /// `device` does not match that of `wg_data`.
     pub fn try_from_device(
+        // API
         device: Device,
+        // Local wireguard key
         wg_data: wireguard::WireguardData,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, CreateDeviceError> {
         if device.pubkey != wg_data.private_key.public_key() {
-            return Err(Error::InvalidDevice);
+            return Err(CreateDeviceError::InvalidDevice);
         }
         Ok(Self {
             id: device.id,
@@ -214,6 +242,7 @@ impl PrivateDevice {
     /// Update all device details that are present in both types. Fails if the pubkey of `device`
     /// does not match that of `wg_data`.
     fn update(&mut self, device: Device) -> Result<(), Error> {
+        // XXX: When would this ever happen? Should it happen? 😱
         if device.pubkey != self.wg_data.private_key.public_key() {
             return Err(Error::InvalidDevice);
         }
@@ -296,9 +325,10 @@ impl Error {
 }
 
 type ResponseTx<T> = oneshot::Sender<Result<T, Error>>;
+type ResponseTxR<T, E> = oneshot::Sender<Result<T, E>>;
 
 enum AccountManagerCommand {
-    Login(AccountNumber, ResponseTx<()>),
+    Login(AccountNumber, ResponseTxR<(), LoginError>),
     Logout(ResponseTx<()>),
     SetData(PrivateAccountAndDevice, ResponseTx<()>),
     GetData(ResponseTx<PrivateDeviceState>),
@@ -323,7 +353,7 @@ pub(crate) struct AccountManagerHandle {
 }
 
 impl AccountManagerHandle {
-    pub async fn login(&self, number: AccountNumber) -> Result<(), Error> {
+    pub async fn login(&self, number: AccountNumber) -> Result<(), LoginError> {
         self.send_command(|tx| AccountManagerCommand::Login(number, tx))
             .await
     }
@@ -389,15 +419,19 @@ impl AccountManagerHandle {
         let _ = rx.await;
     }
 
-    async fn send_command<T>(
+    async fn send_command<T, E>(
         &self,
-        make_cmd: impl FnOnce(oneshot::Sender<Result<T, Error>>) -> AccountManagerCommand,
-    ) -> Result<T, Error> {
+        make_cmd: impl FnOnce(oneshot::Sender<Result<T, E>>) -> AccountManagerCommand,
+    ) -> Result<T, E> {
         let (tx, rx) = oneshot::channel();
         self.cmd_tx
             .unbounded_send(make_cmd(tx))
-            .map_err(|_| Error::AccountManagerDown)?;
-        rx.await.map_err(|_| Error::AccountManagerDown)?
+            // TODO: When would this ever happen ??
+            .unwrap();
+        //.map_err(|_| Error::AccountManagerDown)?;
+        //rx.await.map_err(|_| Error::AccountManagerDown)?
+        // TODO: This should not happen
+        rx.await.unwrap()
     }
 }
 
@@ -480,7 +514,8 @@ impl AccountManager {
                         }
                         Some(AccountManagerCommand::Login(number, tx)) => {
                             let job = self.device_service
-                                .generate_for_account(number);
+                                .generate_for_account(number)
+                                .map_err(LoginError::from);
                             current_api_call.set_login(Box::pin(job), tx);
                         }
                         Some(AccountManagerCommand::Logout(tx)) => {
@@ -734,11 +769,20 @@ impl AccountManager {
 
     async fn consume_login(
         &mut self,
-        device_response: Result<PrivateAccountAndDevice, Error>,
-        tx: ResponseTx<()>,
+        device_response: Result<PrivateAccountAndDevice, LoginError>,
+        tx: ResponseTxR<(), LoginError>,
     ) {
-        let _ =
-            tx.send(async { self.set(PrivateDeviceEvent::Login(device_response?)).await }.await);
+        let _ = tx.send(
+            async {
+                let result = device_response?;
+                let login = PrivateDeviceEvent::Login(result);
+                // TODO: Do not unwrap
+                // Will fail if writing to cache / disk does not work
+                self.set(login).await.unwrap();
+                Ok(())
+            }
+            .await,
+        );
         let data = self.data.clone();
         Self::drain_requests(&mut self.data_requests, || Ok(data.clone()));
     }
