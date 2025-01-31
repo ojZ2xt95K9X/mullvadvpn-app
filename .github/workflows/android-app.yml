@@ -87,7 +87,7 @@ jobs:
   build-native:
     name: Build native # Used by wait for jobs.
     needs: prepare
-    runs-on: ${{ env.BUILD_RUNNER }}
+    runs-on: app-gh-build
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
@@ -132,7 +132,7 @@ jobs:
   build-app:
     name: Build app
     needs: prepare
-    runs-on: ${{ env.BUILD_RUNNER }}
+    runs-on: app-gh-build
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     steps:
@@ -198,7 +198,7 @@ jobs:
   build-instrumented-tests:
     name: Build instrumented test packages
     needs: prepare
-    runs-on: ${{ env.BUILD_RUNNER }}
+    runs-on: app-gh-build
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
