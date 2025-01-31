@@ -170,7 +170,7 @@ jobs:
 
       - name: Compile app
         run: |
-          ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin -x cargoBuild
+          ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin -x cargoBuild --configuration-cache
 
       - name: Wait for other jobs (native, relay list)
         uses: kachick/wait-other-jobs@v3.6.0
@@ -193,14 +193,14 @@ jobs:
 
       - name: Build app
         run: |
-          ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug -x cargoBuild
+          ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug -x cargoBuild --configuration-cache
 
       - name: Build stagemole app
         if: >
           (github.event.inputs.e2e_test_repeat != '0' && env.E2E_TEST_INFRA_FLAVOR == 'stagemole') ||
           github.event.inputs.run_firebase_tests == 'true'
         run: |
-          ./building/container-run.sh android android/gradlew -p android assemblePlayStagemoleDebug -x cargoBuild
+          ./building/container-run.sh android android/gradlew -p android assemblePlayStagemoleDebug -x cargoBuild --configuration-cache
 
       - name: Upload apks
         uses: actions/upload-artifact@v4
@@ -252,7 +252,8 @@ jobs:
             ${{ matrix.assemble-command }} \
             -x cargoBuild \
             -x mergeOssProdDebugJniLibFolders \
-            -x mergePlayStagemoleDebugJniLibFolders
+            -x mergePlayStagemoleDebugJniLibFolders \
+            --configuration-cache
 
       - name: Upload apks
         uses: actions/upload-artifact@v4
