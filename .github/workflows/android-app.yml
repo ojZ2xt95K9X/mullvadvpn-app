@@ -103,9 +103,9 @@ jobs:
     steps:
       - name: Prepare enviornment
         run: |
-          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$RUNNER_NAME" >> $GITHUB_ENV
-          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$RUNNER_NAME" >> $GITHUB_ENV
-          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -138,9 +138,9 @@ jobs:
       - name: Prepare enviornment
         run: |
           echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
-          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$RUNNER_NAME" >> $GITHUB_ENV
-          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$RUNNER_NAME" >> $GITHUB_ENV
-          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
 
       - name: Prepare dummy debug keystore
         run: |
@@ -216,9 +216,9 @@ jobs:
       - name: Prepare enviornment
         run: |
           echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
-          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$RUNNER_NAME" >> $GITHUB_ENV
-          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$RUNNER_NAME" >> $GITHUB_ENV
-          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
 
       - name: Prepare dummy debug keystore
         run: |
