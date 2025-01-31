@@ -85,7 +85,7 @@ jobs:
       - name: Use default container image and resolve digest
         id: determine-runner
         run: |
-          echo "use-runner=ubuntu-latest" >> $GITHUB_ENV
+          echo "use-runner=app-gh-build" >> $GITHUB_ENV
 
       # TODO: Fix fallback
       # - name: Determine runner depending on availability
