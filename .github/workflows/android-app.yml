@@ -60,9 +60,6 @@ permissions: {}
 
 env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
-  CARGO_TARGET_VOLUME_NAME: cargo-target-1 #${{ runner.name }}
-  CARGO_REGISTRY_VOLUME_NAME: cargo-cache-1 #${{ runner.name }}
-  GRADLE_CACHE_VOLUME_NAME: gradle-cache-1 #${{ runner.name }}
 
 jobs:
   # TODO: Add support for overriding the used container image.
@@ -104,6 +101,12 @@ jobs:
           - abi: "armeabi-v7a"
             task-variant: "Arm"
     steps:
+      - name: Prepare enviornment
+        run: |
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$RUNNER_NAME" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -125,49 +128,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # run-lint-and-tests:
-  #   name: Run lint and test tasks
-  #   needs: [prepare]
-  #   runs-on: ubuntu-latest
-  #   container:
-  #     image: ${{ needs.prepare.outputs.container_image }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       include:
-  #         - gradle-task: |
-  #             testDebugUnitTest -x :test:arch:testDebugUnitTest
-  #             :app:testOssProdDebugUnitTest
-  #             :service:testOssProdDebugUnitTest
-  #             :lib:billing:testDebugUnitTest
-  #             :lib:daemon-grpc:testDebugUnitTest
-  #             :lib:shared:testDebugUnitTest
-  #         - gradle-task: :test:arch:test --rerun-tasks
-  #         - gradle-task: detekt
-  #         - gradle-task: lint
-  #   steps:
-  #     # Fix for HOME path overridden by GH runners when building in containers, see:
-  #     # https://github.com/actions/runner/issues/863
-  #     - name: Fix HOME path
-  #       run: echo "HOME=/root" >> $GITHUB_ENV
-
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: true
-
-  #     - name: Run gradle task
-  #       uses: burrunan/gradle-cache-action@v1
-  #       with:
-  #         job-id: jdk17
-  #         arguments: ${{ matrix.gradle-task }}
-  #         gradle-version: wrapper
-  #         build-root-directory: android
-  #         execution-only-caches: false
-  #         # Disable if logs are hard to follow.
-  #         concurrent: true
-  #         read-only: ${{ github.ref != 'refs/heads/main' }}
-
   build-app:
     name: Build app
     needs: prepare
@@ -178,6 +138,9 @@ jobs:
       - name: Prepare enviornment
         run: |
           echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$RUNNER_NAME" >> $GITHUB_ENV
 
       - name: Prepare dummy debug keystore
         run: |
@@ -253,6 +216,9 @@ jobs:
       - name: Prepare enviornment
         run: |
           echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$RUNNER_NAME" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$RUNNER_NAME" >> $GITHUB_ENV
 
       - name: Prepare dummy debug keystore
         run: |
@@ -468,3 +434,46 @@ jobs:
           arg-spec: |
             android/test/firebase/${{ matrix.arg-spec-file }}:default
             --environment-variables ${{ env.FIREBASE_ENVIRONMENT_VARIABLES }}
+
+  # run-lint-and-tests:
+  #   name: Run lint and test tasks
+  #   needs: [prepare]
+  #   runs-on: ubuntu-latest
+  #   container:
+  #     image: ${{ needs.prepare.outputs.container_image }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - gradle-task: |
+  #             testDebugUnitTest -x :test:arch:testDebugUnitTest
+  #             :app:testOssProdDebugUnitTest
+  #             :service:testOssProdDebugUnitTest
+  #             :lib:billing:testDebugUnitTest
+  #             :lib:daemon-grpc:testDebugUnitTest
+  #             :lib:shared:testDebugUnitTest
+  #         - gradle-task: :test:arch:test --rerun-tasks
+  #         - gradle-task: detekt
+  #         - gradle-task: lint
+  #   steps:
+  #     # Fix for HOME path overridden by GH runners when building in containers, see:
+  #     # https://github.com/actions/runner/issues/863
+  #     - name: Fix HOME path
+  #       run: echo "HOME=/root" >> $GITHUB_ENV
+
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
+
+  #     - name: Run gradle task
+  #       uses: burrunan/gradle-cache-action@v1
+  #       with:
+  #         job-id: jdk17
+  #         arguments: ${{ matrix.gradle-task }}
+  #         gradle-version: wrapper
+  #         build-root-directory: android
+  #         execution-only-caches: false
+  #         # Disable if logs are hard to follow.
+  #         concurrent: true
+  #         read-only: ${{ github.ref != 'refs/heads/main' }}
