@@ -57,7 +57,7 @@ service ManagementService {
 
   // Account management
   rpc CreateNewAccount(google.protobuf.Empty) returns (google.protobuf.StringValue) {}
-  rpc LoginAccount(google.protobuf.StringValue) returns (google.protobuf.Empty) {}
+  rpc LoginAccount(AccountNumber) returns (LoginResult) {}
   rpc LogoutAccount(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc GetAccountData(google.protobuf.StringValue) returns (AccountData) {}
   rpc GetAccountHistory(google.protobuf.Empty) returns (AccountHistory) {}
@@ -424,6 +424,29 @@ message CustomProxy {
     Socks5Local socks5local = 1;
     Socks5Remote socks5remote = 2;
     Shadowsocks shadowsocks = 3;
+  }
+}
+
+message AccountNumber {
+     string account_number = 1;
+}
+
+message LoginResult {
+  message LoginSuccess {}
+
+  message LoginError {
+    message MaxDeviceReached {}
+    message InvalidAccount {}
+
+    oneof error {
+      MaxDeviceReached max_device_reached = 1;
+      InvalidAccount invalid_account = 2;
+    }
+  }
+
+  oneof result {
+    LoginSuccess login_success = 1;
+    LoginError login_error = 2;
   }
 }
 
