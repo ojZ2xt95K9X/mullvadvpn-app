@@ -75,8 +75,9 @@ jobs:
 
       - name: Use custom container image if specified
         if: ${{ github.event.inputs.override_container_image != '' }}
-        run: echo "inner_container_image=${{ github.event.inputs.override_container_image }}"
-          >> $GITHUB_ENV
+        run: |
+          echo "inner_container_image=${{ github.event.inputs.override_container_image }}" \
+            >> $GITHUB_ENV
 
       - name: Use default container image and resolve digest
         if: ${{ github.event.inputs.override_container_image == '' }}
@@ -89,6 +90,8 @@ jobs:
     name: Build native # Used by wait for jobs.
     needs: prepare
     runs-on: ubuntu-latest # app-gh-build
+    env:
+      ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
       matrix:
         include:
@@ -110,7 +113,9 @@ jobs:
           git submodule update --init --recursive --depth=1 wireguard-go-rs
 
       - name: Build native
-        run: ./building/container-run.sh android android/gradlew -p android cargoBuild${{ matrix.task-variant }}
+        run: |
+          ./building/container-run.sh android android/gradlew -p \
+            android cargoBuild${{ matrix.task-variant }}
 
       - name: Upload native libs
         uses: actions/upload-artifact@v4 # TODO: Change to v3?
@@ -167,20 +172,25 @@ jobs:
     name: Build app
     needs: prepare
     runs-on: ubuntu-latest
+    env:
+      ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     steps:
+      - name: Prepare enviornment
+        run: |
+          echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
+
+      - name: Prepare dummy debug keystore
+        run: |
+          echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
+            base64 -d > $DEBUG_KEYSTORE_HOST_PATH
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Prepare dummy debug keystore
-        run: |
-          echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > ${{ runner.temp }}/debug.keystore
-
       - name: Compile app
         run: |
-          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android compileOssProdDebugKotlin -x cargoBuild
 
       - name: Wait for other jobs (native, relay list)
@@ -204,7 +214,6 @@ jobs:
 
       - name: Build app
         run: |
-          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android assembleOssProdDebug -x cargoBuild
 
       - name: Build stagemole app
@@ -212,7 +221,6 @@ jobs:
           (github.event.inputs.e2e_test_repeat != '0' && env.E2E_TEST_INFRA_FLAVOR == 'stagemole') ||
           github.event.inputs.run_firebase_tests == 'true'
         run: |
-          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android assemblePlayStagemoleDebug -x cargoBuild
 
       - name: Upload apks
@@ -227,6 +235,8 @@ jobs:
     name: Build instrumented test packages
     needs: prepare
     runs-on: ubuntu-latest
+    env:
+      ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
       matrix:
         include:
@@ -240,19 +250,22 @@ jobs:
             assemble-command: :test:e2e:assemble
             artifact-path: android/test/e2e/build/outputs/apk
     steps:
+      - name: Prepare enviornment
+        run: |
+          echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
+
+      - name: Prepare dummy debug keystore
+        run: |
+          echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
+            base64 -d > $DEBUG_KEYSTORE_HOST_PATH
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Prepare dummy debug keystore
-        run: |
-          echo "${{ secrets.ANDROID_DUMMY_DEBUG_KEYSTORE }}" | \
-            base64 -d > ${{ runner.temp }}/debug.keystore
-
       - name: Assemble instrumented test apk
         run: |
-          export DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore
           ./building/container-run.sh android android/gradlew -p android \
             ${{ matrix.assemble-command }} \
             -x cargoBuild \

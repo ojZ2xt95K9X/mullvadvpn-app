@@ -16,7 +16,9 @@ CARGO_REGISTRY_VOLUME_NAME=${CARGO_REGISTRY_VOLUME_NAME:-"cargo-registry"}
 GRADLE_CACHE_VOLUME_NAME=${GRADLE_CACHE_VOLUME_NAME:-"gradle-cache"}
 DEBUG_KEYSTORE_HOST_PATH=${DEBUG_KEYSTORE_HOST_PATH:-""}
 ANDROID_CREDENTIALS_DIR=${ANDROID_CREDENTIALS_DIR:-""}
-CONTAINER_RUNNER=${CONTAINER_RUNNER:-"podman"}
+CONTAINER_RUNNER=${CONTAINER_RUNNER:-$(cat "$SCRIPT_DIR/linux-container-image.txt")}
+LINUX_CONTAINER_NAME=${LINUX_CONTAINER_NAME:-"podman"}
+ANDROID_CONTAINER_NAME=${ANDROID_CONTAINER_NAME:-$(cat "$SCRIPT_DIR/android-container-image.txt")}
 # Temporarily do not use mold for linking by default due to it causing build errors.
 # There's a separate issue (DES-1177) to address this problem.
 # Build servers also opt out of this and instead use GNU ld.
@@ -30,11 +32,11 @@ source "$REPO_DIR/scripts/utils/log"
 
 case ${1-:""} in
     linux)
-        container_image_name=$(cat "$SCRIPT_DIR/linux-container-image.txt")
+        container_image_name=$LINUX_CONTAINER_NAME
         shift 1
     ;;
     android)
-        container_image_name=$(cat "$SCRIPT_DIR/android-container-image.txt")
+        container_image_name=$ANDROID_CONTAINER_NAME
         optional_gradle_cache_volume=(-v "$GRADLE_CACHE_VOLUME_NAME:/root/.gradle:Z")
 
         if [ -n "$DEBUG_KEYSTORE_HOST_PATH" ]; then
