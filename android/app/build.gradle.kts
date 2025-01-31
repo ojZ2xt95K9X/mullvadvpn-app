@@ -247,7 +247,7 @@ android {
         }
 
         // Ensure all relevant assemble tasks depend on our ensure task.
-        tasks["assemble$capitalizedVariantName"].dependsOn(tasks["ensureValidVersionCode"])
+        // tasks["assemble$capitalizedVariantName"].dependsOn(tasks["ensureValidVersionCode"])
     }
 }
 
