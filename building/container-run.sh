@@ -16,9 +16,7 @@ CARGO_REGISTRY_VOLUME_NAME=${CARGO_REGISTRY_VOLUME_NAME:-"cargo-registry"}
 GRADLE_CACHE_VOLUME_NAME=${GRADLE_CACHE_VOLUME_NAME:-"gradle-cache"}
 DEBUG_KEYSTORE_HOST_PATH=${DEBUG_KEYSTORE_HOST_PATH:-""}
 ANDROID_CREDENTIALS_DIR=${ANDROID_CREDENTIALS_DIR:-""}
-CONTAINER_RUNNER=${CONTAINER_RUNNER:-$(cat "$SCRIPT_DIR/linux-container-image.txt")}
-LINUX_CONTAINER_NAME=${LINUX_CONTAINER_NAME:-"podman"}
-ANDROID_CONTAINER_NAME=${ANDROID_CONTAINER_NAME:-$(cat "$SCRIPT_DIR/android-container-image.txt")}
+CONTAINER_RUNNER=${CONTAINER_RUNNER:-"podman"}
 # Temporarily do not use mold for linking by default due to it causing build errors.
 # There's a separate issue (DES-1177) to address this problem.
 # Build servers also opt out of this and instead use GNU ld.
@@ -26,6 +24,10 @@ USE_MOLD=${USE_MOLD:-"false"}
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
+
+LINUX_CONTAINER_NAME=${LINUX_CONTAINER_NAME:-$(cat "$SCRIPT_DIR/linux-container-image.txt")}
+ANDROID_CONTAINER_NAME=${ANDROID_CONTAINER_NAME:-$(cat "$SCRIPT_DIR/android-container-image.txt")}
+
 cd "$SCRIPT_DIR"
 
 source "$REPO_DIR/scripts/utils/log"
