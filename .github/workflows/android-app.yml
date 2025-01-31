@@ -63,7 +63,6 @@ env:
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
 
 jobs:
-  # TODO: Add support for overriding the used container image.
   prepare:
     name: Prepare
     runs-on: ubuntu-latest
@@ -81,13 +80,22 @@ jobs:
         if: ${{ github.event.inputs.override_container_image == '' }}
         run: |
           echo "inner_container_image=$(cat ./building/android-container-image.txt)" >> $GITHUB_ENV
+
+      - name: Determine runner depending on availability
+        id: determine-runner
+        uses: jimmygchen/runner-fallback-action@v1
+        with:
+          primary-runner: "app-gh-build"
+          fallback-runner: "ubuntu-latest"
+          github-token: ${{ secrets.YOUR_GITHUB_TOKEN }}
     outputs:
       container_image: ${{ env.inner_container_image }}
+      build_runner: ${{ steps.determine-runner.outputs.use-runner }}
 
   build-native:
     name: Build native # Used by wait for jobs.
     needs: prepare
-    runs-on: app-gh-build
+    runs-on: ${{ needs.prepare.outputs.build_runner }}
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
@@ -122,7 +130,7 @@ jobs:
             android cargoBuild${{ matrix.task-variant }}
 
       - name: Upload native libs
-        uses: actions/upload-artifact@v4 # TODO: Change to v3?
+        uses: actions/upload-artifact@v4
         with:
           name: native-libs-${{ matrix.abi }}
           path: android/app/build/rustJniLibs/android
@@ -132,7 +140,7 @@ jobs:
   build-app:
     name: Build app
     needs: prepare
-    runs-on: app-gh-build
+    runs-on: ${{ needs.prepare.outputs.build_runner }}
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     steps:
@@ -198,7 +206,7 @@ jobs:
   build-instrumented-tests:
     name: Build instrumented test packages
     needs: prepare
-    runs-on: app-gh-build
+    runs-on: ${{ needs.prepare.outputs.build_runner }}
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
