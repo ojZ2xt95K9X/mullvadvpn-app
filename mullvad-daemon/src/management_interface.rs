@@ -435,12 +435,13 @@ impl ManagementService for ManagementServiceImpl {
     // Account management
     //
 
-    async fn create_new_account(&self, _: Request<()>) -> ServiceResult<String> {
+    async fn create_new_account(&self, _: Request<()>) -> ServiceResult<types::AccountNumber> {
         log::debug!("create_new_account");
         let (tx, rx) = oneshot::channel();
         self.send_command_to_daemon(DaemonCommand::CreateNewAccount(tx))?;
         self.wait_for_result(rx)
             .await?
+            .map(types::AccountNumber::from)
             .map(Response::new)
             .map_err(map_daemon_error)
     }

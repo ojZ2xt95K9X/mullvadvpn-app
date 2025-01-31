@@ -37,16 +37,16 @@ impl TryFrom<types::VoucherSubmission> for VoucherSubmission {
 }
 
 impl From<AccountNumber> for types::AccountNumber {
-    fn from(account_number: AccountNumber) -> Self {
-        types::AccountNumber { account_number }
+    fn from(value: AccountNumber) -> Self {
+        types::AccountNumber { value }
     }
 }
 
 impl TryFrom<types::AccountNumber> for AccountNumber {
     type Error = FromProtobufTypeError;
 
-    fn try_from(value: types::AccountNumber) -> Result<Self, Self::Error> {
-        Ok(value.account_number)
+    fn try_from(account_number: types::AccountNumber) -> Result<Self, Self::Error> {
+        Ok(account_number.value)
     }
 }
 

@@ -1645,7 +1645,7 @@ impl Daemon {
         Self::oneshot_send(tx, performing_post_upgrade, "performing post upgrade");
     }
 
-    fn on_create_new_account(&mut self, tx: ResponseTx<String, Error>) {
+    fn on_create_new_account(&mut self, tx: ResponseTx<AccountNumber, Error>) {
         let account_manager = self.account_manager.clone();
         tokio::spawn(async move {
             let result = async {

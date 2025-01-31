@@ -427,12 +427,14 @@ impl MullvadProxyClient {
     }
 
     pub async fn create_new_account(&mut self) -> Result<AccountNumber> {
-        Ok(self
+        let account_number = self
             .0
             .create_new_account(())
             .await
             .map_err(map_device_error)?
-            .into_inner())
+            .into_inner();
+        let account_number = account_number.value;
+        Ok(account_number)
     }
 
     pub async fn login_account(&mut self, account: AccountNumber) -> Result<()> {
