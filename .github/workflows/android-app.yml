@@ -97,7 +97,7 @@ jobs:
       #     github-token: ${{ secrets.YOUR_GITHUB_TOKEN }}
     outputs:
       container_image: ${{ env.inner_container_image }}
-      build_runner: ${{ steps.determine-runner.outputs.use-runner }}
+      build_runner: ${{ env.use-runner }}
 
   build-native:
     name: Build native # Used by wait for jobs.
