@@ -427,6 +427,9 @@ message CustomProxy {
   }
 }
 
+// AccountNumber & LoginResult belong to the LoginAccount rpc.
+
+// Account identifier used for authentication.
 message AccountNumber {
      string account_number = 1;
 }

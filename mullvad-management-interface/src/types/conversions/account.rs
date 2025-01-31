@@ -1,6 +1,6 @@
 use crate::types;
 use chrono::DateTime;
-use mullvad_types::account::{AccountData, VoucherSubmission};
+use mullvad_types::account::{AccountData, AccountNumber, VoucherSubmission};
 #[cfg(target_os = "android")]
 use mullvad_types::account::{PlayPurchase, PlayPurchasePaymentToken};
 
@@ -33,6 +33,20 @@ impl TryFrom<types::VoucherSubmission> for VoucherSubmission {
             new_expiry,
             time_added: submission.seconds_added,
         })
+    }
+}
+
+impl From<AccountNumber> for types::AccountNumber {
+    fn from(account_number: AccountNumber) -> Self {
+        types::AccountNumber { account_number }
+    }
+}
+
+impl TryFrom<types::AccountNumber> for AccountNumber {
+    type Error = FromProtobufTypeError;
+
+    fn try_from(value: types::AccountNumber) -> Result<Self, Self::Error> {
+        Ok(value.account_number)
     }
 }
 

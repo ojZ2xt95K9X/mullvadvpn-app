@@ -445,14 +445,28 @@ impl ManagementService for ManagementServiceImpl {
             .map_err(map_daemon_error)
     }
 
-    async fn login_account(&self, request: Request<AccountNumber>) -> ServiceResult<()> {
+    async fn login_account(
+        &self,
+        request: Request<types::AccountNumber>,
+    ) -> ServiceResult<types::LoginResult> {
         log::debug!("login_account");
-        let account_number = request.into_inner();
+        let account_number =
+            AccountNumber::try_from(request.into_inner()).map_err(map_protobuf_type_err)?;
         let (tx, rx) = oneshot::channel();
         self.send_command_to_daemon(DaemonCommand::LoginAccount(tx, account_number))?;
+
+        // TODO: Find a way to cut down on the loc. Please.
+        let login_response = {
+            let login_success = types::login_result::LoginSuccess {};
+            let login_success = types::login_result::Result::LoginSuccess(login_success);
+            types::LoginResult {
+                result: Some(login_success),
+            }
+        };
+
         self.wait_for_result(rx)
             .await?
-            .map(Response::new)
+            .map(|_| Response::new(login_response))
             .map_err(map_daemon_error)
     }
 

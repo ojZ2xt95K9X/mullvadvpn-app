@@ -436,8 +436,9 @@ impl MullvadProxyClient {
     }
 
     pub async fn login_account(&mut self, account: AccountNumber) -> Result<()> {
+        let account_number = types::AccountNumber::from(account);
         self.0
-            .login_account(account)
+            .login_account(account_number)
             .await
             .map_err(map_device_error)?;
         Ok(())
