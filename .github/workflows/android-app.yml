@@ -59,6 +59,7 @@ on:
 permissions: {}
 
 env:
+  BUILD_RUNNER: app-gh-build # ubuntu-latest
   E2E_TEST_INFRA_FLAVOR: ${{ github.event.inputs.e2e_tests_infra_flavor || 'stagemole' }}
 
 jobs:
@@ -86,7 +87,7 @@ jobs:
   build-native:
     name: Build native # Used by wait for jobs.
     needs: prepare
-    runs-on: ubuntu-latest # app-gh-build
+    runs-on: ${{ env.BUILD_RUNNER }}
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
@@ -103,9 +104,9 @@ jobs:
     steps:
       - name: Prepare enviornment
         run: |
-          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
-          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
-          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -131,16 +132,16 @@ jobs:
   build-app:
     name: Build app
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ${{ env.BUILD_RUNNER }}
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     steps:
       - name: Prepare enviornment
         run: |
           echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
-          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
-          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
-          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
 
       - name: Prepare dummy debug keystore
         run: |
@@ -197,7 +198,7 @@ jobs:
   build-instrumented-tests:
     name: Build instrumented test packages
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ${{ env.BUILD_RUNNER }}
     env:
       ANDROID_CONTAINER_NAME: ${{ needs.prepare.outputs.container_image }}
     strategy:
@@ -216,9 +217,9 @@ jobs:
       - name: Prepare enviornment
         run: |
           echo "DEBUG_KEYSTORE_HOST_PATH=${{ runner.temp }}/debug.keystore" >> $GITHUB_ENV
-          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
-          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
-          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]'" >> $GITHUB_ENV
+          echo "CARGO_TARGET_VOLUME_NAME=cargo-target-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
+          echo "CARGO_REGISTRY_VOLUME_NAME=cargo-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
+          echo "GRADLE_CACHE_VOLUME_NAME=gradle-cache-$(echo $RUNNER_NAME | tr -cd '[:alnum:]')" >> $GITHUB_ENV
 
       - name: Prepare dummy debug keystore
         run: |
