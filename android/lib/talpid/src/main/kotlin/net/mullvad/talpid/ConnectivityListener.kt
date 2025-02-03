@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.scan
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.plus
 import net.mullvad.talpid.model.ConnectionStatus
 import net.mullvad.talpid.util.IPAvailabilityUtils
 import net.mullvad.talpid.util.NetworkEvent
@@ -29,7 +29,7 @@ import net.mullvad.talpid.util.networkFlow
 
 class ConnectivityListener(
     val connectivityManager: ConnectivityManager,
-    val talpidVpnService: TalpidVpnService,
+    val protect: (socket: DatagramSocket) -> Unit,
 ) {
     private lateinit var _isConnected: StateFlow<ConnectionStatus>
     // Used by JNI
@@ -46,28 +46,25 @@ class ConnectivityListener(
             dnsServerChanges().stateIn(scope, SharingStarted.Eagerly, currentDnsServers())
 
         _isConnected =
-            combine(
-                    connectivityManager
-                        .defaultNetworkFlow(),
-                    hasInternetCapability(),
-                ) {
+            combine(connectivityManager.defaultNetworkFlow(), hasInternetCapability()) {
                     linkPropertiesChanged: NetworkEvent,
                     hasInternetCapability: Boolean ->
                     if (hasInternetCapability) {
                         ConnectionStatus(
-                            IPAvailabilityUtils.isIPv4Available(::protect),
-                            IPAvailabilityUtils.isIPv6Available(::protect),
+                            IPAvailabilityUtils.isIPv4Available(protect = { protect(it) }),
+                            IPAvailabilityUtils.isIPv6Available(protect = { protect(it) }),
                         )
                     } else {
                         ConnectionStatus(false, false)
                     }
                 }
-                .flowOn(Dispatchers.IO)
                 .onEach { notifyConnectivityChange(it.ipv4, it.ipv6) }
-                .stateIn(scope, SharingStarted.Eagerly, ConnectionStatus(false, false))
+                .stateIn(
+                    scope + Dispatchers.IO,
+                    SharingStarted.Eagerly,
+                    ConnectionStatus(false, false),
+                )
     }
-
-    fun protect(socket: DatagramSocket) = talpidVpnService.protect(socket)
 
     private fun dnsServerChanges(): Flow<List<InetAddress>> =
         connectivityManager
