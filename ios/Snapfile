@@ -1,4 +1,4 @@
-ios_version '17.2'
+ios_version '18.2'
 
 # A list of devices you want to take the screenshots from
 devices([
@@ -21,6 +21,8 @@ scheme("MullvadVPN")
 
 # The name of the test plan which contains the UI Tests
 testplan("MullvadVPNScreenshots")
+
+xcargs "-configuration MockRelease"
 
 # Where should the resulting screenshots be stored?
 output_directory("./Screenshots")
