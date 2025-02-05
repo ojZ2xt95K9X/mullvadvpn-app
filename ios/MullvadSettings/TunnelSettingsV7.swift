@@ -6,6 +6,10 @@
 //  Copyright © 2025 Mullvad VPN AB. All rights reserved.
 //
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 83bc0f839f (Add settings for excludeLocalNetworks)
 import Foundation
 import MullvadTypes
 

@@ -45,7 +45,7 @@ public struct TunnelSettingsV6: Codable, Equatable, TunnelSettings, Sendable {
     }
 
     public func upgradeToNextVersion() -> any TunnelSettings {
-        TunnelSettingsV7(
+       TunnelSettingsV7(
             relayConstraints: relayConstraints,
             dnsSettings: dnsSettings,
             wireGuardObfuscation: wireGuardObfuscation,
