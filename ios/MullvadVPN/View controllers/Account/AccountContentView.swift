@@ -100,10 +100,6 @@ class AccountContentView: UIView {
 
     lazy var buttonStackView: UIStackView = {
         var arrangedSubviews = [UIView]()
-        #if DEBUG
-        arrangedSubviews.append(redeemVoucherButton)
-        arrangedSubviews.append(storeKit2Button)
-        #endif
         arrangedSubviews.append(contentsOf: [
             purchaseButton,
             logoutButton,
