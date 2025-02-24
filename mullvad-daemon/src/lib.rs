@@ -42,7 +42,7 @@ use geoip::GeoIpHandler;
 use leak_checker::{LeakChecker, LeakInfo};
 use management_interface::ManagementInterfaceServer;
 use mullvad_api::ApiEndpoint;
-use mullvad_relay_selector::{RelaySelector, SelectorConfig};
+use mullvad_relay_selector::RelaySelector;
 #[cfg(target_os = "android")]
 use mullvad_types::account::{PlayPurchase, PlayPurchasePaymentToken};
 #[cfg(any(windows, target_os = "android", target_os = "macos"))]
@@ -664,9 +664,8 @@ impl Daemon {
             settings_event_listener.notify_settings(settings.to_owned());
         });
 
-        let initial_selector_config = SelectorConfig::from_settings(&settings);
         let relay_selector = RelaySelector::new(
-            initial_selector_config,
+            &*settings,
             config.resource_dir.join(RELAYS_FILENAME),
             config.cache_dir.join(RELAYS_FILENAME),
         );
@@ -674,9 +673,7 @@ impl Daemon {
         let settings_relay_selector = relay_selector.clone();
         settings.register_change_listener(move |settings| {
             // Notify relay selector of changes to the settings/selector config
-            settings_relay_selector
-                .clone()
-                .set_config(SelectorConfig::from_settings(settings));
+            settings_relay_selector.clone().set_config(settings);
         });
 
         let (access_mode_handler, access_mode_provider) = api::AccessModeSelector::spawn(

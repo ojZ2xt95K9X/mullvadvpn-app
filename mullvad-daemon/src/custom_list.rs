@@ -1,5 +1,4 @@
 use crate::{Daemon, Error};
-use mullvad_relay_selector::SelectorConfig;
 use mullvad_types::{
     constraints::Constraint,
     custom_list::{CustomList, Id},
@@ -38,8 +37,7 @@ impl Daemon {
             .map_err(Error::SettingsError);
 
         if let Ok(true) = settings_changed {
-            self.relay_selector
-                .set_config(SelectorConfig::from_settings(&self.settings));
+            self.relay_selector.set_config(&*self.settings);
 
             if self.change_should_cause_reconnect(Some(id)) {
                 log::info!("Initiating tunnel restart because a selected custom list was deleted");
@@ -65,8 +63,7 @@ impl Daemon {
             .map_err(Error::SettingsError);
 
         if let Ok(true) = settings_changed {
-            self.relay_selector
-                .set_config(SelectorConfig::from_settings(&self.settings));
+            self.relay_selector.set_config(&*self.settings);
 
             if self.change_should_cause_reconnect(Some(list_id)) {
                 log::info!("Initiating tunnel restart because a selected custom list changed");
@@ -89,8 +86,7 @@ impl Daemon {
             .map_err(Error::SettingsError);
 
         if let Ok(true) = settings_changed {
-            self.relay_selector
-                .set_config(SelectorConfig::from_settings(&self.settings));
+            self.relay_selector.set_config(&*self.settings);
 
             if self.change_should_cause_reconnect(None) {
                 log::info!("Initiating tunnel restart because a selected custom list was deleted");

@@ -118,8 +118,8 @@ pub struct SelectorConfig {
     pub bridge_settings: BridgeSettings,
 }
 
-impl SelectorConfig {
-    pub fn from_settings(settings: &Settings) -> Self {
+impl From<&Settings> for SelectorConfig {
+    fn from(settings: &Settings) -> Self {
         let additional_constraints = AdditionalRelayConstraints {
             wireguard: AdditionalWireguardConstraints {
                 #[cfg(daita)]
@@ -428,11 +428,12 @@ impl<'a> TryFrom<NormalSelectorConfig<'a>> for RelayQuery {
 impl RelaySelector {
     /// Returns a new `RelaySelector` backed by relays cached on disk.
     pub fn new(
-        config: SelectorConfig,
+        config: impl Into<SelectorConfig>,
         resource_path: impl AsRef<Path>,
         cache_path: impl AsRef<Path>,
     ) -> Self {
         const DATE_TIME_FORMAT_STR: &str = "%Y-%m-%d %H:%M:%S%.3f";
+        let config: SelectorConfig = config.into();
         let unsynchronized_parsed_relays =
             ParsedRelays::from_file(&cache_path, &resource_path, &config.relay_overrides)
                 .unwrap_or_else(|error| {
@@ -466,7 +467,8 @@ impl RelaySelector {
         }
     }
 
-    pub fn set_config(&mut self, config: SelectorConfig) {
+    pub fn set_config(&mut self, config: impl Into<SelectorConfig>) {
+        let config = config.into();
         self.set_overrides(&config.relay_overrides);
         let mut config_mutex = self.config.lock().unwrap();
         *config_mutex = config;
