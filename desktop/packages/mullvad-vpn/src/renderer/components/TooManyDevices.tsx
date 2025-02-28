@@ -8,7 +8,7 @@ import log from '../../shared/logging';
 import { capitalizeEveryWord } from '../../shared/string-helpers';
 import { useAppContext } from '../context';
 import { Button, Flex, IconButton, Spinner } from '../lib/components';
-import { Colors, Spacings } from '../lib/foundations';
+import { DeprecatedColors, Spacings } from '../lib/foundations';
 import { transitions, useHistory } from '../lib/history';
 import { formatHtml } from '../lib/html-formatter';
 import { IconBadge, IconBadgeProps } from '../lib/icon-badge';
@@ -42,7 +42,7 @@ const StyledBody = styled.div({
 const StyledTitle = styled.span(bigText, {
   lineHeight: '38px',
   margin: `0 ${measurements.horizontalViewMargin} 8px`,
-  color: Colors.white,
+  color: DeprecatedColors.white,
 });
 
 const StyledLabel = styled.span({
@@ -50,7 +50,7 @@ const StyledLabel = styled.span({
   fontSize: '12px',
   fontWeight: 600,
   lineHeight: '20px',
-  color: Colors.white,
+  color: DeprecatedColors.white,
   margin: `0 ${measurements.horizontalViewMargin} 18px`,
 });
 
@@ -74,7 +74,7 @@ const StyledDeviceName = styled.span(normalText, {
 const StyledDeviceDate = styled.span(tinyText, {
   fontSize: '10px',
   lineHeight: '10px',
-  color: Colors.white60,
+  color: DeprecatedColors.white60,
 });
 
 export default function TooManyDevices() {
@@ -258,7 +258,7 @@ function Device(props: IDeviceProps) {
       <ModalAlert
         isOpen={confirmationVisible}
         type={ModalAlertType.warning}
-        iconColor={Colors.red}
+        iconColor={DeprecatedColors.red}
         buttons={[
           <AppButton.RedButton key="remove" onClick={onRemove} disabled={deleting}>
             {
@@ -290,7 +290,7 @@ function Device(props: IDeviceProps) {
       <ModalAlert
         isOpen={error}
         type={ModalAlertType.warning}
-        iconColor={Colors.red}
+        iconColor={DeprecatedColors.red}
         buttons={[
           <AppButton.BlueButton key="close" onClick={resetError}>
             {messages.gettext('Close')}

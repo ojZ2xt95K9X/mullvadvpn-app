@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
-import { Colors, Radius } from '../../foundations';
+import { DeprecatedColors, Radius } from '../../foundations';
 import { useHistory } from '../../history';
 import { RoutePath } from '../../routes';
 import { buttonReset } from '../../styles';
@@ -12,7 +12,7 @@ export interface LinkProps extends TextProps, Omit<React.HtmlHTMLAttributes<'but
 }
 
 const StyledText = styled(Text)<{
-  $hoverColor: Colors | undefined;
+  $hoverColor: DeprecatedColors | undefined;
 }>((props) => ({
   ...buttonReset,
   background: 'transparent',
@@ -24,15 +24,15 @@ const StyledText = styled(Text)<{
   },
   '&:focus-visible': {
     borderRadius: Radius.radius4,
-    outline: `2px solid ${Colors.white}`,
+    outline: `2px solid ${DeprecatedColors.white}`,
     outlineOffset: '2px',
   },
 }));
 
-const getHoverColor = (color: Colors | undefined) => {
+const getHoverColor = (color: DeprecatedColors | undefined) => {
   switch (color) {
-    case Colors.white60:
-      return Colors.white;
+    case DeprecatedColors.white60:
+      return DeprecatedColors.white;
     default:
       return undefined;
   }

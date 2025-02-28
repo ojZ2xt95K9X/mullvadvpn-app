@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 import { Flex } from '../lib/components';
-import { Colors, Spacings } from '../lib/foundations';
+import { DeprecatedColors, Spacings } from '../lib/foundations';
 import { measurements } from './common-styles';
 import { NavigationScrollbars } from './NavigationScrollbars';
 
@@ -9,7 +9,7 @@ export const Container = styled.div({
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
-  backgroundColor: Colors.blue,
+  backgroundColor: DeprecatedColors.blue,
   overflow: 'hidden',
 });
 
@@ -21,7 +21,7 @@ export const Layout = styled.div({
 });
 
 export const SettingsContainer = styled(Container)({
-  backgroundColor: Colors.darkBlue,
+  backgroundColor: DeprecatedColors.darkBlue,
 });
 
 export const SettingsNavigationScrollbars = styled(NavigationScrollbars)({

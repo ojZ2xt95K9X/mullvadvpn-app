@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { messages } from '../../shared/gettext';
 import { InAppNotificationIndicatorType } from '../../shared/notifications/notification';
 import { Icon, IconButton } from '../lib/components';
-import { Colors } from '../lib/foundations';
+import { DeprecatedColors } from '../lib/foundations';
 import { useEffectEvent, useLastDefinedValue, useStyledRef } from '../lib/utility-hooks';
 import * as AppButton from './AppButton';
 import { tinyText } from './common-styles';
@@ -12,11 +12,11 @@ import { tinyText } from './common-styles';
 const NOTIFICATION_AREA_ID = 'notification-area';
 
 export const NotificationTitle = styled.span(tinyText, {
-  color: Colors.white,
+  color: DeprecatedColors.white,
 });
 
 export const NotificationSubtitleText = styled.span(tinyText, {
-  color: Colors.white60,
+  color: DeprecatedColors.white60,
 });
 
 interface INotificationSubtitleProps {
@@ -38,7 +38,7 @@ export const NotificationActionButton = styled(AppButton.SimpleButton)({
 
 export const NotificationActionButtonInner = styled(Icon)({
   [NotificationActionButton + ':hover &&']: {
-    backgroundColor: Colors.white80,
+    backgroundColor: DeprecatedColors.white80,
   },
 });
 
@@ -52,7 +52,11 @@ export function NotificationOpenLinkAction(props: NotificationActionProps) {
       <NotificationActionButton
         aria-describedby={NOTIFICATION_AREA_ID}
         aria-label={messages.gettext('Open URL')}>
-        <NotificationActionButtonInner size="small" icon="external" color={Colors.white60} />
+        <NotificationActionButtonInner
+          size="small"
+          icon="external"
+          color={DeprecatedColors.white60}
+        />
       </NotificationActionButton>
     </AppButton.BlockingButton>
   );
@@ -101,9 +105,9 @@ interface INotificationIndicatorProps {
 }
 
 const notificationIndicatorTypeColorMap = {
-  success: Colors.green,
-  warning: Colors.yellow,
-  error: Colors.red,
+  success: DeprecatedColors.green,
+  warning: DeprecatedColors.yellow,
+  error: DeprecatedColors.red,
 };
 
 export const NotificationIndicator = styled.div<INotificationIndicatorProps>((props) => ({
@@ -125,7 +129,7 @@ const Collapsible = styled.div<ICollapsibleProps>((props) => {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: props.$alignBottom ? 'flex-end' : 'flex-start',
-    backgroundColor: Colors.darkerBlue,
+    backgroundColor: DeprecatedColors.darkerBlue,
     overflow: 'hidden',
     // Using auto as the initial value prevents transition if a notification is visible on mount.
     height: props.$height === undefined ? 'auto' : `${props.$height}px`,

@@ -17,7 +17,7 @@ import {
 import { useAppContext } from '../context';
 import useActions from '../lib/actionsHook';
 import { Link } from '../lib/components';
-import { Colors } from '../lib/foundations';
+import { DeprecatedColors } from '../lib/foundations';
 import { transitions, useHistory } from '../lib/history';
 import { formatHtml } from '../lib/html-formatter';
 import {
@@ -144,7 +144,7 @@ export default function NotificationArea(props: IProps) {
               {notification.subtitleAction?.type === 'navigate' ? (
                 <Link
                   variant="labelTiny"
-                  color={Colors.white60}
+                  color={DeprecatedColors.white60}
                   {...notification.subtitleAction.link}>
                   {formatHtml(notification.subtitle ?? '')}
                 </Link>

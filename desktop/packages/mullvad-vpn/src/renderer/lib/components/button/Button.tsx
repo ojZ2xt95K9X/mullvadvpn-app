@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
 
-import { Colors, Radius, Spacings } from '../../foundations';
+import { DeprecatedColors, Radius, Spacings } from '../../foundations';
 import { buttonReset } from '../../styles';
 import { Flex } from '../flex';
 import { ButtonIcon, ButtonProvider, ButtonText, StyledIcon, StyledText } from './components';
@@ -13,19 +13,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variants = {
   primary: {
-    background: Colors.blue,
-    hover: Colors.blue60,
-    disabled: Colors.blue50,
+    background: DeprecatedColors.blue,
+    hover: DeprecatedColors.blue60,
+    disabled: DeprecatedColors.blue50,
   },
   success: {
-    background: Colors.green,
-    hover: Colors.green90,
-    disabled: Colors.green40,
+    background: DeprecatedColors.green,
+    hover: DeprecatedColors.green90,
+    disabled: DeprecatedColors.green40,
   },
   destructive: {
-    background: Colors.red,
-    hover: Colors.red80,
-    disabled: Colors.red60,
+    background: DeprecatedColors.red,
+    hover: DeprecatedColors.red80,
+    disabled: DeprecatedColors.red60,
   },
 } as const;
 
@@ -50,7 +50,7 @@ const StyledButton = styled.button({
     background: 'var(--disabled)',
   },
   '&:focus-visible': {
-    outline: `2px solid ${Colors.white}`,
+    outline: `2px solid ${DeprecatedColors.white}`,
     outlineOffset: '2px',
   },
 });

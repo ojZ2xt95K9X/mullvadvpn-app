@@ -10,7 +10,7 @@ import { messages } from '../../shared/gettext';
 import { useAppContext } from '../context';
 import useActions from '../lib/actionsHook';
 import { Flex, Icon } from '../lib/components';
-import { Colors, Spacings } from '../lib/foundations';
+import { DeprecatedColors, Spacings } from '../lib/foundations';
 import { transitions, useHistory } from '../lib/history';
 import { IconBadge } from '../lib/icon-badge';
 import { generateRoutePath } from '../lib/routeHelpers';
@@ -37,7 +37,7 @@ export const StyledCustomScrollbars = styled(CustomScrollbars)({
 export const StyledContainer = styled(Container)({
   paddingTop: '22px',
   minHeight: '100%',
-  backgroundColor: Colors.darkBlue,
+  backgroundColor: DeprecatedColors.darkBlue,
 });
 
 export const StyledBody = styled.div({
@@ -55,7 +55,7 @@ export const StyledTitle = styled.span(hugeText, {
 
 export const StyledLabel = styled.span(tinyText, {
   lineHeight: '20px',
-  color: Colors.white,
+  color: DeprecatedColors.white,
   marginBottom: '9px',
 });
 

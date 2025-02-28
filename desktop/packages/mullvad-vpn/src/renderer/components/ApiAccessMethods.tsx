@@ -7,7 +7,7 @@ import { messages } from '../../shared/gettext';
 import { useAppContext } from '../context';
 import { useApiAccessMethodTest } from '../lib/api-access-methods';
 import { Container, Flex, Spinner } from '../lib/components';
-import { Colors, Spacings } from '../lib/foundations';
+import { DeprecatedColors, Spacings } from '../lib/foundations';
 import { useHistory } from '../lib/history';
 import { generateRoutePath } from '../lib/routeHelpers';
 import { RoutePath } from '../lib/routes';
@@ -40,7 +40,7 @@ const StyledTestResultCircle = styled.div<{ $result: boolean }>((props) => ({
   width: '10px',
   height: '10px',
   borderRadius: '50%',
-  backgroundColor: props.$result ? Colors.green : Colors.red,
+  backgroundColor: props.$result ? DeprecatedColors.green : DeprecatedColors.red,
   marginRight: Spacings.spacing2,
 }));
 

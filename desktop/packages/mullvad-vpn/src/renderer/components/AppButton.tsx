@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 import log from '../../shared/logging';
-import { Colors } from '../lib/foundations';
+import { DeprecatedColors } from '../lib/foundations';
 import { useMounted } from '../lib/utility-hooks';
 import {
   StyledButtonContent,
@@ -146,37 +146,37 @@ export function BlockingButton(props: IBlockingProps) {
 }
 
 export const RedButton = styled(BaseButton)({
-  backgroundColor: Colors.red,
+  backgroundColor: DeprecatedColors.red,
   '&&:not(:disabled):hover': {
-    backgroundColor: Colors.red95,
+    backgroundColor: DeprecatedColors.red95,
   },
 });
 
 export const GreenButton = styled(BaseButton)({
-  backgroundColor: Colors.green,
+  backgroundColor: DeprecatedColors.green,
   '&&:not(:disabled):hover': {
-    backgroundColor: Colors.green90,
+    backgroundColor: DeprecatedColors.green90,
   },
 });
 
 export const BlueButton = styled(BaseButton)({
-  backgroundColor: Colors.blue80,
+  backgroundColor: DeprecatedColors.blue80,
   '&&:not(:disabled):hover': {
-    backgroundColor: Colors.blue60,
+    backgroundColor: DeprecatedColors.blue60,
   },
 });
 
 export const TransparentButton = styled(BaseButton)(transparentButton, {
-  backgroundColor: Colors.white20,
+  backgroundColor: DeprecatedColors.white20,
   '&&:not(:disabled):hover': {
-    backgroundColor: Colors.white40,
+    backgroundColor: DeprecatedColors.white40,
   },
 });
 
 export const RedTransparentButton = styled(BaseButton)(transparentButton, {
-  backgroundColor: Colors.red60,
+  backgroundColor: DeprecatedColors.red60,
   '&&:not(:disabled):hover': {
-    backgroundColor: Colors.red80,
+    backgroundColor: DeprecatedColors.red80,
   },
 });
 

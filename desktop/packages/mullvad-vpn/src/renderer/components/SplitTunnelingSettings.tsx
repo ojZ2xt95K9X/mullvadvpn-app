@@ -12,7 +12,7 @@ import { strings } from '../../shared/constants';
 import { messages } from '../../shared/gettext';
 import { useAppContext } from '../context';
 import { Button, Container, Flex, FootnoteMini, IconButton, Spinner } from '../lib/components';
-import { Colors, Spacings } from '../lib/foundations';
+import { DeprecatedColors, Spacings } from '../lib/foundations';
 import { useHistory } from '../lib/history';
 import { formatHtml } from '../lib/html-formatter';
 import { useEffectEvent, useStyledRef } from '../lib/utility-hooks';
@@ -196,7 +196,7 @@ function LinuxSplitTunnelingSettings(props: IPlatformSplitTunnelingSettingsProps
       <ModalAlert
         isOpen={browseError !== undefined}
         type={ModalAlertType.warning}
-        iconColor={Colors.red}
+        iconColor={DeprecatedColors.red}
         message={sprintf(
           // TRANSLATORS: Error message showed in a dialog when an application fails to launch.
           messages.pgettext(
@@ -235,7 +235,7 @@ function LinuxApplicationRow(props: ILinuxApplicationRowProps) {
   const hideWarningDialog = useCallback(() => setShowWarning(false), []);
 
   const disabled = props.application.warning === 'launches-elsewhere';
-  const warningColor = disabled ? Colors.red : Colors.yellow;
+  const warningColor = disabled ? DeprecatedColors.red : DeprecatedColors.yellow;
   const warningMessage = disabled
     ? sprintf(
         messages.pgettext(
@@ -573,7 +573,7 @@ function MacOsSplitTunnelingAvailability({
           <WideSmallButton onClick={showFullDiskAccessSettings}>
             {messages.pgettext('split-tunneling-view', 'Open System Settings')}
           </WideSmallButton>
-          <FootnoteMini color={Colors.white60}>
+          <FootnoteMini color={DeprecatedColors.white60}>
             {messages.pgettext(
               'split-tunneling-view',
               'Enabled "Full disk access" and still having issues?',
@@ -620,7 +620,7 @@ function applicationGetKey<T extends IApplication>(application: T): string {
 }
 
 const StyledContainer = styled(Cell.Container)({
-  backgroundColor: Colors.blue40,
+  backgroundColor: DeprecatedColors.blue40,
 });
 
 interface IApplicationRowProps {
