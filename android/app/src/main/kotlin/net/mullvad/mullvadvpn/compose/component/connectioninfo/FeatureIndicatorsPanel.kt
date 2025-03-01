@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package net.mullvad.mullvadvpn.compose.component.connectioninfo
 
 import androidx.compose.foundation.layout.Arrangement

@@ -111,7 +111,7 @@ private fun TopBar(
         actions = {
             val clipboardToastMessage = stringResource(R.string.copied_logs_to_clipboard)
             IconButton(
-                onClick = { clipboardHandle(state.text(), clipboardToastMessage) },
+                onClick = { /* clipboardHandle(state.text(), clipboardToastMessage) */},
                 modifier = Modifier.focusProperties { down = FocusRequester.Cancel },
             ) {
                 Icon(

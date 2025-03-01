@@ -13,25 +13,36 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.platform.LocalAutofillManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.credentials.CreatePasswordRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.exceptions.CreateCredentialException
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
+import co.touchlab.kermit.Logger
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.NavGraphs
@@ -45,6 +56,7 @@ import com.ramcosta.composedestinations.generated.destinations.VerificationPendi
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.ramcosta.composedestinations.result.NavResult
 import com.ramcosta.composedestinations.result.ResultRecipient
+import kotlinx.coroutines.launch
 import net.mullvad.mullvadvpn.R
 import net.mullvad.mullvadvpn.compose.button.NegativeButton
 import net.mullvad.mullvadvpn.compose.button.RedeemVoucherButton
@@ -196,6 +208,30 @@ fun WelcomeScreen(
             // Welcome info area
             WelcomeInfo(snackbarHostState, state, navigateToDeviceInfoDialog)
 
+            if (state.accountNumber != null) {
+
+                val context = LocalContext.current
+                LaunchedEffect(state.accountNumber.value) {
+                    try {
+                        val createPasswordRequest =
+                            CreatePasswordRequest(id = "-", password = state.accountNumber.value)
+                        val credentialManager = CredentialManager.create(context)
+                        val result =
+                            credentialManager.createCredential(
+                                // Use an activity based context to avoid undefined
+                                // system UI launching behavior.
+                                context,
+                                createPasswordRequest,
+                            )
+                        Logger.d("Credential created: $result")
+                        //
+                        // handleRegisterPasswordResult(result)
+                    } catch (e: CreateCredentialException) {
+                        //                                handleFailure(e)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             // Button area
@@ -274,7 +310,7 @@ private fun AccountNumberRow(snackbarHostState: SnackbarHostState, state: Welcom
     val copiedAccountNumberMessage = stringResource(id = R.string.copied_mullvad_account_number)
     val copyToClipboard = createCopyToClipboardHandle(snackbarHostState = snackbarHostState)
     val onCopyToClipboard = {
-        copyToClipboard(state.accountNumber?.value ?: "", copiedAccountNumberMessage)
+        /*copyToClipboard(state.accountNumber?.value ?: "", copiedAccountNumberMessage)*/
     }
 
     Row(

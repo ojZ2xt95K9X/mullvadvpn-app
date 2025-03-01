@@ -384,6 +384,7 @@ dependencies {
     implementation(libs.commons.validator)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore)
+    implementation(libs.androidx.credentials)
     implementation(libs.androidx.ktx)
     implementation(libs.androidx.coresplashscreen)
     implementation(libs.androidx.lifecycle.runtime)
