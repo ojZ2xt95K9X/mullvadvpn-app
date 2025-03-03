@@ -5,7 +5,7 @@ import { closeToExpiry, formatRemainingTime, hasExpired } from '../../../../shar
 import { messages } from '../../../../shared/gettext';
 import { capitalizeEveryWord } from '../../../../shared/string-helpers';
 import { Flex, FootnoteMini } from '../../../lib/components';
-import { DeprecatedColors, Spacings } from '../../../lib/foundations';
+import { Spacings } from '../../../lib/foundations';
 import { useSelector } from '../../../redux/store';
 
 const StyledTimeLeftLabel = styled(FootnoteMini)({
@@ -30,7 +30,7 @@ export const AppMainHeaderDeviceInfo = () => {
 
   return (
     <Flex $gap={Spacings.spacing6} $margin={{ top: Spacings.spacing1 }}>
-      <StyledDeviceLabel color={DeprecatedColors.white80}>
+      <StyledDeviceLabel color="onBackground60">
         {sprintf(
           // TRANSLATORS: A label that will display the newly created device name to inform the user
           // TRANSLATORS: about it.
@@ -43,7 +43,7 @@ export const AppMainHeaderDeviceInfo = () => {
         )}
       </StyledDeviceLabel>
       {accountExpiry && !closeToExpiry(accountExpiry) && !isOutOfTime && (
-        <StyledTimeLeftLabel color={DeprecatedColors.white80}>
+        <StyledTimeLeftLabel color="onBackground60">
           {sprintf(messages.pgettext('device-management', 'Time left: %(timeLeft)s'), {
             timeLeft: formattedExpiry,
           })}

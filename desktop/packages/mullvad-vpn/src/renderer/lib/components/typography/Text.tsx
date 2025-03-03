@@ -1,12 +1,12 @@
 import { createElement, forwardRef } from 'react';
 import styled, { WebTarget } from 'styled-components';
 
-import { DeprecatedColors, Typography, typography, TypographyProperties } from '../../foundations';
+import { colors, Typography, typography, TypographyProperties } from '../../foundations';
 import { TransientProps } from '../../types';
 
 export type TextProps = React.PropsWithChildren<{
   variant?: Typography;
-  color?: DeprecatedColors;
+  color?: keyof (typeof colors)['text'];
   tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
   as?: WebTarget;
   style?: React.CSSProperties;
@@ -28,7 +28,7 @@ export const Text = forwardRef(
     {
       tag = 'span',
       variant = 'bodySmall',
-      color = DeprecatedColors.white,
+      color = 'onInteractive100',
       children,
       style,
       ...props
@@ -42,7 +42,7 @@ export const Text = forwardRef(
         tag={tag}
         style={
           {
-            '--color': color,
+            '--color': colors.text[color],
             ...style,
           } as React.CSSProperties
         }
