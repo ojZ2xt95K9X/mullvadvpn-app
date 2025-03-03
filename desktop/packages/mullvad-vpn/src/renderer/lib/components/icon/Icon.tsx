@@ -1,19 +1,16 @@
 import styled from 'styled-components';
 
-import { DeprecatedColors } from '../../foundations';
-import { TransientProps } from '../../types';
+import { colors } from '../../foundations';
 import { icons } from './types';
 
 export type IconProps = {
   icon: keyof typeof icons;
   size?: 'tiny' | 'small' | 'medium' | 'large' | 'big';
-  color?: DeprecatedColors;
+  color?: keyof (typeof colors)['icon'];
   className?: string;
 } & React.HTMLAttributes<HTMLDivElement>;
 
-const StyledIcon = styled.div<
-  TransientProps<Pick<IconProps, 'color'>> & { $size: number; $src: string }
->`
+const StyledIcon = styled.div<{ $color: string; $size: number; $src: string }>`
   width: ${({ $size }) => $size}px;
   height: ${({ $size }) => $size}px;
   mask: url(${({ $src }) => $src}) no-repeat center;
@@ -34,10 +31,11 @@ const PATH_PREFIX = process.env.NODE_ENV === 'development' ? '../' : '';
 export const Icon = ({
   icon: iconProp,
   size = 'medium',
-  color = DeprecatedColors.white,
+  color: colorProp = 'primary',
   ...props
 }: IconProps) => {
   const icon = icons[iconProp];
   const src = iconProp.startsWith('data:') ? iconProp : `${PATH_PREFIX}assets/icons/${icon}.svg`;
+  const color = colors.icon[colorProp];
   return <StyledIcon $src={src} $size={iconSizes[size]} $color={color} role="img" {...props} />;
 };

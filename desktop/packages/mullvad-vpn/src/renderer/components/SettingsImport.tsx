@@ -238,9 +238,9 @@ function SettingsImportStatus(props: ImportStatusProps) {
     iconProps = props.status.successful
       ? {
           icon: 'checkmark',
-          color: DeprecatedColors.green,
+          color: 'positive',
         }
-      : { icon: 'cross', color: DeprecatedColors.red };
+      : { icon: 'cross', color: 'negative' };
 
     if (props.status.successful) {
       subtitle =

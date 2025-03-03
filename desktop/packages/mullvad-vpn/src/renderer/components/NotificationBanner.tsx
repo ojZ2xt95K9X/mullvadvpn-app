@@ -52,11 +52,7 @@ export function NotificationOpenLinkAction(props: NotificationActionProps) {
       <NotificationActionButton
         aria-describedby={NOTIFICATION_AREA_ID}
         aria-label={messages.gettext('Open URL')}>
-        <NotificationActionButtonInner
-          size="small"
-          icon="external"
-          color={DeprecatedColors.white60}
-        />
+        <NotificationActionButtonInner size="small" icon="external" color="secondary" />
       </NotificationActionButton>
     </AppButton.BlockingButton>
   );

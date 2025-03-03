@@ -27,7 +27,7 @@ export default function ChevronButton(props: IProps) {
 
   return (
     <Button {...otherProps}>
-      <StyledIcon color={DeprecatedColors.white60} icon={up ? 'chevron-up' : 'chevron-down'} />
+      <StyledIcon color="secondary" icon={up ? 'chevron-up' : 'chevron-down'} />
     </Button>
   );
 }

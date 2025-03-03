@@ -317,19 +317,19 @@ class ModalAlertImpl extends React.Component<IModalAlertImplProps, IModalAlertSt
 
   private renderTypeIcon(type: ModalAlertType) {
     let source: IconProps['icon'] | undefined = undefined;
-    let color = undefined;
+    let color: IconProps['color'] = undefined;
     switch (type) {
       case ModalAlertType.info:
         source = 'info-circle';
-        color = DeprecatedColors.white;
+        color = 'primary';
         break;
       case ModalAlertType.caution:
         source = 'alert-circle';
-        color = DeprecatedColors.white;
+        color = 'primary';
         break;
       case ModalAlertType.warning:
         source = 'alert-circle';
-        color = DeprecatedColors.red;
+        color = 'negative';
         break;
       case ModalAlertType.loading:
         return <Spinner size="big" />;

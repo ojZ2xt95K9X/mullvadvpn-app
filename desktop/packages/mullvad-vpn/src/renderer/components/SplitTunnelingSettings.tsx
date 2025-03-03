@@ -235,7 +235,7 @@ function LinuxApplicationRow(props: ILinuxApplicationRowProps) {
   const hideWarningDialog = useCallback(() => setShowWarning(false), []);
 
   const disabled = props.application.warning === 'launches-elsewhere';
-  const warningColor = disabled ? DeprecatedColors.red : DeprecatedColors.yellow;
+  const warningColor = disabled ? 'negative' : 'warning';
   const warningMessage = disabled
     ? sprintf(
         messages.pgettext(

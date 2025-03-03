@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-import {
-  CustomListError,
-  type CustomLists,
-  type RelayLocation,
-} from '../../../shared/daemon-rpc-types';
+import { CustomListError, type RelayLocation } from '../../../shared/daemon-rpc-types';
 import { messages } from '../../../shared/gettext';
 import log from '../../../shared/logging';
 import { useAppContext } from '../../context';
@@ -106,7 +102,7 @@ export default function CustomLists(props: CustomListsProps) {
           $backgroundColor={DeprecatedColors.blue}
           $backgroundColorHover={DeprecatedColors.blue80}
           onClick={showAddList}>
-          <StyledSideButtonIcon icon="add-circle" color={DeprecatedColors.white60} />
+          <StyledSideButtonIcon icon="add-circle" color="secondary" />
         </StyledCellButton>
       </StyledCellContainer>
 
@@ -202,7 +198,7 @@ function AddListForm(props: AddListFormProps) {
             $backgroundColorHover={DeprecatedColors.blue80}
             disabled={!nameValid}
             onClick={createList}>
-            <StyledSideButtonIcon icon="checkmark" color={DeprecatedColors.white60} />
+            <StyledSideButtonIcon icon="checkmark" color="secondary" />
           </StyledAddListCellButton>
         </StyledCellContainer>
         <Cell.CellFooter>
