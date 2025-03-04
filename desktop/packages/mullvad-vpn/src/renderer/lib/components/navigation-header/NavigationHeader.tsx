@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import { DeprecatedColors, Spacings } from '../../foundations';
+import { colors, Spacings } from '../../foundations';
 import { TransientProps } from '../../types';
 import { Flex } from '../flex';
 import {
@@ -15,7 +15,7 @@ export type NavigationHeaderProps = React.PropsWithChildren<{
 }>;
 
 const StyledHeader = styled.nav<TransientProps<NavigationHeaderProps>>({
-  backgroundColor: DeprecatedColors.darkBlue,
+  backgroundColor: colors.brand.darkBlue,
 });
 
 export const StyledContent = styled.div({
