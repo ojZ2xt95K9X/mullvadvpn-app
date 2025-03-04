@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import { DeprecatedColors, Spacings } from '../../foundations';
+import { colors, Spacings } from '../../foundations';
 import { TransientProps } from '../../types';
 import { Flex } from '../flex';
 import { MainHeaderIconButton } from './components';
@@ -16,9 +16,9 @@ const sizes = {
 };
 
 const variants = {
-  default: DeprecatedColors.blue,
-  error: DeprecatedColors.red,
-  success: DeprecatedColors.green,
+  default: colors.brand.darkBlue,
+  error: colors.brand.red,
+  success: colors.brand.green,
 };
 
 const StyledHeader = styled.header<TransientProps<HeaderProps>>(
