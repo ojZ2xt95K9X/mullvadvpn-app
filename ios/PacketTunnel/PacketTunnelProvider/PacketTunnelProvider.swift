@@ -30,6 +30,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
     private let tunnelSettingsUpdater: SettingsUpdater!
     private var encryptedDNSTransport: EncryptedDNSTransport!
     private var migrationManager: MigrationManager!
+    private var connection: InTunnelConnection?
     let migrationFailureIterator = REST.RetryStrategy.failedMigrationRecovery.makeDelayIterator()
 
     private let tunnelSettingsListener = TunnelSettingsListener()
@@ -87,6 +88,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         relaySelector = RelaySelectorWrapper(
             relayCache: ipOverrideWrapper
         )
+
 
         actor = PacketTunnelActor(
             timings: PacketTunnelActorTimings(),
@@ -322,7 +324,13 @@ extension PacketTunnelProvider {
                         observedConnectionState,
                         privateKey: privateKey
                     )
-                case .initial, .connected, .disconnecting, .disconnected, .error:
+                case .connected(_):
+                    if #available(iOSApplicationExtension 18.0, *) {
+                        if let virtualInterface {
+                            connection = InTunnelConnection(logger: providerLogger, bindTo: virtualInterface)
+                        }
+                    }
+                case .initial, .disconnecting, .disconnected, .error:
                     break
                 }
             }
@@ -404,5 +412,22 @@ extension PacketTunnelProvider: EphemeralPeerReceiving {
         // Do not try reconnecting to the `.current` relay, else the actor's `State` equality check will fail
         // and it will not try to reconnect
         actor.reconnect(to: .random, reconnectReason: .connectionLoss)
+    }
+}
+class InTunnelConnection {
+    let connection: NWConnection
+    let queue: DispatchQueue
+
+    init(logger: Logger, bindTo: NWInterface) {
+        let parameters = NWParameters.tcp
+        parameters.requiredInterface = bindTo
+        let target = Network.NWEndpoint.hostPort(host: "10.64.0.1", port: 1337)
+        self.connection = NWConnection(to: target, using: parameters)
+        self.connection.stateUpdateHandler = { state in
+            logger.critical("TCP connection state changed to \(state)")
+        }
+        self.queue = DispatchQueue(label: "mullvad.net.NWConnection")
+        self.connection.start(queue: self.queue)
+
     }
 }
