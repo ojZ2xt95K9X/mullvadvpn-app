@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -28,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import java.time.Duration
@@ -116,101 +120,106 @@ fun NotificationBanner(
 @Composable
 @Suppress("LongMethod")
 private fun Notification(notificationBannerData: NotificationData) {
-    val (title, message, statusLevel, action) = notificationBannerData
-    ConstraintLayout(
-        modifier =
-            Modifier.fillMaxWidth()
-                .background(color = MaterialTheme.colorScheme.surfaceContainer)
-                .padding(
-                    start = Dimens.notificationBannerStartPadding,
-                    end = Dimens.notificationBannerEndPadding,
-                    top = Dimens.smallPadding,
-                    bottom = Dimens.smallPadding,
-                )
-                .animateContentSize()
-                .testTag(NOTIFICATION_BANNER)
-    ) {
-        val (status, textTitle, textMessage, actionIcon) = createRefs()
-        NotificationDot(
-            statusLevel,
-            Modifier.constrainAs(status) {
-                top.linkTo(textTitle.top)
-                start.linkTo(parent.start)
-                bottom.linkTo(textTitle.bottom)
-            },
-        )
-        Text(
-            text = title.toUpperCase(),
+    Box(modifier = Modifier.fillMaxWidth()) {
+        val (title, message, statusLevel, action) = notificationBannerData
+        ConstraintLayout(
             modifier =
-                Modifier.constrainAs(textTitle) {
-                        top.linkTo(parent.top)
-                        start.linkTo(status.end)
-                        if (message != null) {
-                            bottom.linkTo(textMessage.top)
-                        } else {
-                            bottom.linkTo(parent.bottom)
-                        }
-                        if (action != null) {
-                            end.linkTo(actionIcon.start)
-                        } else {
-                            end.linkTo(parent.end)
-                        }
-                        width = Dimension.fillToConstraints
-                    }
-                    .padding(start = Dimens.smallPadding),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        message?.let { message ->
+                Modifier.align(Alignment.TopCenter)
+                    .widthIn(max = 480.dp)
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium.copy(topStart = CornerSize(0.dp), topEnd = CornerSize(0.dp)))
+                    .background(color = MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(
+                        start = Dimens.notificationBannerStartPadding,
+                        end = Dimens.notificationBannerEndPadding,
+                        top = Dimens.smallPadding,
+                        bottom = Dimens.smallPadding,
+                    )
+                    .animateContentSize()
+                    .testTag(NOTIFICATION_BANNER)
+        ) {
+            val (status, textTitle, textMessage, actionIcon) = createRefs()
+            NotificationDot(
+                statusLevel,
+                Modifier.constrainAs(status) {
+                    top.linkTo(textTitle.top)
+                    start.linkTo(parent.start)
+                    bottom.linkTo(textTitle.bottom)
+                },
+            )
             Text(
-                text = message.text,
+                text = title.toUpperCase(),
                 modifier =
-                    Modifier.constrainAs(textMessage) {
-                            top.linkTo(textTitle.bottom)
-                            start.linkTo(textTitle.start)
+                    Modifier.constrainAs(textTitle) {
+                            top.linkTo(parent.top)
+                            start.linkTo(status.end)
+                            if (message != null) {
+                                bottom.linkTo(textMessage.top)
+                            } else {
+                                bottom.linkTo(parent.bottom)
+                            }
                             if (action != null) {
                                 end.linkTo(actionIcon.start)
-                                bottom.linkTo(parent.bottom)
                             } else {
                                 end.linkTo(parent.end)
-                                bottom.linkTo(parent.bottom)
                             }
                             width = Dimension.fillToConstraints
-                            height = Dimension.wrapContent
                         }
-                        .padding(start = Dimens.smallPadding, top = Dimens.tinyPadding)
-                        .wrapContentWidth(Alignment.Start)
-                        .let {
-                            if (message is NotificationMessage.ClickableText) {
-                                it.clickable(
-                                        onClickLabel = message.contentDescription,
-                                        role = Role.Button,
-                                    ) {
-                                        message.onClick()
-                                    }
-                                    .testTag(NOTIFICATION_BANNER_TEXT_ACTION)
-                            } else {
-                                it
+                        .padding(start = Dimens.smallPadding),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            message?.let { message ->
+                Text(
+                    text = message.text,
+                    modifier =
+                        Modifier.constrainAs(textMessage) {
+                                top.linkTo(textTitle.bottom)
+                                start.linkTo(textTitle.start)
+                                if (action != null) {
+                                    end.linkTo(actionIcon.start)
+                                    bottom.linkTo(parent.bottom)
+                                } else {
+                                    end.linkTo(parent.end)
+                                    bottom.linkTo(parent.bottom)
+                                }
+                                width = Dimension.fillToConstraints
+                                height = Dimension.wrapContent
                             }
+                            .padding(start = Dimens.smallPadding, top = Dimens.tinyPadding)
+                            .wrapContentWidth(Alignment.Start)
+                            .let {
+                                if (message is NotificationMessage.ClickableText) {
+                                    it.clickable(
+                                            onClickLabel = message.contentDescription,
+                                            role = Role.Button,
+                                        ) {
+                                            message.onClick()
+                                        }
+                                        .testTag(NOTIFICATION_BANNER_TEXT_ACTION)
+                                } else {
+                                    it
+                                }
+                            },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+            action?.let {
+                NotificationAction(
+                    it.icon,
+                    onClick = it.onClick,
+                    contentDescription = it.contentDescription,
+                    modifier =
+                        Modifier.constrainAs(actionIcon) {
+                            top.linkTo(parent.top)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
                         },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelMedium,
-            )
-        }
-        action?.let {
-            NotificationAction(
-                it.icon,
-                onClick = it.onClick,
-                contentDescription = it.contentDescription,
-                modifier =
-                    Modifier.constrainAs(actionIcon) {
-                        top.linkTo(parent.top)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                    },
-            )
+                )
+            }
         }
     }
 }
