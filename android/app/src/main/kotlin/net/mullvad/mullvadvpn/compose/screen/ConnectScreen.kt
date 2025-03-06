@@ -342,31 +342,7 @@ fun ConnectScreen(
                         verticalArrangement = Arrangement.SpaceBetween,
                     ) {
                         val animatedPadding = animateDpAsState(if (hasFocus) 4.dp else 0.dp)
-                        Column() {
-
-                            NavigationDrawerItem(
-                                onClick = onAccountClick,
-                                selected = false,
-                                leadingContent = {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.logo_icon),
-                                        contentDescription = null, // No meaningful user info or action.
-                                        modifier =
-                                            Modifier.padding(start = animatedPadding.value)
-                                                .padding(16.dp)
-                                                .size(32.dp),
-                                        tint = Color.Unspecified, // Logo should not be tinted
-                                    )
-                                },
-                            ) {
-                                Icon(
-                                    modifier = Modifier.height(16.dp),
-                                    painter = painterResource(id = R.drawable.logo_text),
-                                    contentDescription =
-                                        null, // No meaningful user info or action.
-                                    tint = Color.Unspecified, // Logo should not be tinted
-                                )
-                            }
+                        Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.logo_icon),
