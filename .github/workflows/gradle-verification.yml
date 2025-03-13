@@ -25,8 +25,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # with:
-        #  submodules: true
+
+      - name: Create Android rustJniLibs dir
+        run: mkdir -p android/app/build/rustJniLibs/android
 
       - name: Create verification file
         run: |
