@@ -47,7 +47,7 @@ jobs:
     needs: [run-gradle-verification-tests]
     steps:
       - name: Download files
-      - uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           pattern: verification-file-*
           path: files
