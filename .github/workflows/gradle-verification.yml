@@ -25,7 +25,7 @@ jobs:
 
       - name: Create verification file
         run: |
-          ./building/container-run.sh android/gradlew -p android -M sha256 -xcargoBuild ${{ matrix.gradle-task-assemble }} ${{ matrix.gradle-task-lint }} ${{ matrix.gradle-task-unit-test }} ${{ matrix.gradle-task-assemble-test }}
+          ./building/container-run.sh android android/gradlew -p android -M sha256 -xcargoBuild ${{ matrix.gradle-task-assemble }} ${{ matrix.gradle-task-lint }} ${{ matrix.gradle-task-unit-test }} ${{ matrix.gradle-task-assemble-test }}
           sha256 android/gradle/verification-metadata.xml
 
       - name: Upload verification file
