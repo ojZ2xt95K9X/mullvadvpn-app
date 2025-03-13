@@ -17,6 +17,11 @@ jobs:
         gradle-task-lint: [lint, '']
         gradle-task-unit-test: [compileDebugUnitTestKotlin, '']
         gradle-task-assemble-test: [assembleAndroidTest, '']
+        exclude:
+          - gradle-task-assemble: ''
+            gradle-task-lint: ''
+            gradle-task-unit-test: ''
+            gradle-task-assemble-test: ''
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,7 +31,7 @@ jobs:
       - name: Create verification file
         run: |
           ./building/container-run.sh android android/gradlew -p android -M sha256 -xcargoBuild ${{ matrix.gradle-task-assemble }} ${{ matrix.gradle-task-lint }} ${{ matrix.gradle-task-unit-test }} ${{ matrix.gradle-task-assemble-test }}
-          sha256 android/gradle/verification-metadata.xml
+          sha256sum android/gradle/verification-metadata.xml
 
       - name: Upload verification file
         uses: actions/upload-artifact@v4
@@ -35,3 +40,18 @@ jobs:
           path: android/gradle/verification-metadata.xml
           if-no-files-found: error
           retention-days: 7
+
+  compare-files:
+    name: Compare verification files
+    runs-on: ubuntu-latest
+    needs: [run-gradle-verification-tests]
+    steps:
+      - name: Download files
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: verification-file-*
+          path: files
+          merge-multiple: true
+
+      - name: Print checksums
+        run: sha256sum files/*
