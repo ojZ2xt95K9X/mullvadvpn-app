@@ -2,7 +2,11 @@ pluginManagement {
     repositories {
         google()
         mavenCentral()
-        gradlePluginPortal()
+        gradlePluginPortal {
+            content {
+                excludeGroupByRegex("io\\.grpc.*")
+            }
+        }
     }
 }
 
