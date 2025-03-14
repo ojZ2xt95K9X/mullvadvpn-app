@@ -82,6 +82,8 @@ fn get_suffix(release_tag: &str) -> String {
         git_rev_parse_commit_hash("HEAD").expect("Failed to run `git rev-parse HEAD^{{commit}}`");
     let product_version_commit_hash = git_rev_parse_commit_hash(release_tag);
 
+    panic!("head_commit_hash: {head_commit_hash}\nproduct_version_commmit_hash: {product_version_commit_hash:#?}");
+
     // If we are currently building the release tag, there is no dev suffix
     if Some(&head_commit_hash) == product_version_commit_hash.as_ref() {
         String::new()
