@@ -257,7 +257,7 @@ jobs:
       - name: Create binaries directory & add to PATH
         shell: bash -ieo pipefail {0}
         run: |
-          # Put all binaries in a known folder: test-runner, connection-checker, mullvad-version
+          # Put all binaries in a known folder: test-runner, connection-checker
           mkdir "${{ github.workspace }}/bin"
           echo "${{ github.workspace }}/bin/" >> "$GITHUB_PATH"
       - name: Download Test Manager
@@ -265,11 +265,6 @@ jobs:
         if: ${{ needs.build-test-manager-linux.result == 'success' }}
         with:
           name: linux-test-manager-build
-          path: ${{ github.workspace }}/bin
-      - name: Download mullvad-version
-        uses: actions/download-artifact@v4
-        with:
-          name: mullvad-version-linux
           path: ${{ github.workspace }}/bin
       - name: Download Test Runner binaries
         uses: actions/download-artifact@v4
@@ -296,7 +291,6 @@ jobs:
           git fetch --tags --prune-tags --force
           export TEST_FILTERS="${{ github.event.inputs.tests }}"
           ls -la "$TEST_DIST_DIR"
-          ${{ github.workspace }}/bin/mullvad-version
           ./test/scripts/run/ci.sh ${{ matrix.os }}
       - name: Upload test report
         uses: actions/upload-artifact@v4
