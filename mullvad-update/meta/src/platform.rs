@@ -10,8 +10,10 @@ use std::{
     fmt,
     path::{Path, PathBuf},
     str::FromStr,
+    sync::LazyLock,
 };
 use tokio::{fs, io};
+use vec1::vec1;
 
 use crate::{
     artifacts,
@@ -21,6 +23,12 @@ use crate::{
 /// Base URL for metadata found with `meta pull`.
 /// Actual JSON files should be stored at `<base url>/<platform>.json`.
 const META_REPOSITORY_URL: &str = "https://releases.stagemole.eu/desktop/metadata/";
+
+/// TLS certificate to pin to for `meta pull`.
+static PINNED_CERTIFICATE: LazyLock<reqwest::Certificate> = LazyLock::new(|| {
+    const CERT_BYTES: &[u8] = include_bytes!("../../../mullvad-api/le_root_cert.pem");
+    reqwest::Certificate::from_pem(CERT_BYTES).expect("invalid cert")
+});
 
 #[derive(Clone, Copy)]
 pub enum Platform {
@@ -125,10 +133,9 @@ impl Platform {
             key::VerifyingKey::from_hex(crate::VERIFYING_PUBKEY).expect("Invalid pubkey");
 
         let version_provider = HttpVersionInfoProvider {
-            // TODO: pin
-            pinned_certificate: None,
+            pinned_certificate: Some(PINNED_CERTIFICATE.clone()),
             url,
-            verifying_key,
+            verifying_keys: vec1![verifying_key],
         };
         let response = version_provider
             .get_versions(crate::MIN_VERIFY_METADATA_VERSION)
@@ -229,12 +236,11 @@ impl Platform {
         println!("Verifying signature of {}...", signed_path.display());
         let bytes = fs::read(signed_path).await.context("Failed to read file")?;
 
-        // TODO: Actual key
-        let public_key =
-            key::VerifyingKey::from_hex(include_str!("../../test-pubkey")).expect("Invalid pubkey");
+        let public_key = key::VerifyingKey::from_hex(include_str!("../../stagemole-pubkey"))
+            .expect("Invalid pubkey");
 
         format::SignedResponse::deserialize_and_verify(
-            &public_key,
+            &vec1![public_key],
             &bytes,
             crate::MIN_VERIFY_METADATA_VERSION,
         )
@@ -301,6 +307,7 @@ impl Platform {
             installers.push(
                 artifacts::generate_installer_details(
                     format::Architecture::Arm64,
+                    version,
                     base_urls,
                     &artifact,
                 )
@@ -311,6 +318,7 @@ impl Platform {
             installers.push(
                 artifacts::generate_installer_details(
                     format::Architecture::X86,
+                    version,
                     base_urls,
                     &artifact,
                 )

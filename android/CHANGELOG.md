@@ -22,9 +22,9 @@ Line wrap the file at 100 chars.                                              Th
 * **Security**: in case of vulnerabilities.
 
 ## [Unreleased]
-
 ### Added
 - Prompt password manager to store new account number on account creation.
+- Add the ability to force the ip version used to connect to a relay.
 
 ### Changed
 - Disable Wireguard port setting when a obfuscation is selected since it is not used when an
@@ -33,9 +33,21 @@ Line wrap the file at 100 chars.                                              Th
 ### Removed
 - Remove Google's resolvers from encrypted DNS proxy.
 
+### Fixed
+- Will no longer try to connect over IPv6 if IPv6 is not available.
+
+
+## [android/2025.1-beta1] - 2025-03-05
+### Fixed
+- Fix a crash that could occur in the Filter screen.
+- Fix a bug that could cause the app to crash while navigating.
+
+### Security
+- Make daemon aware of route changes to prevent sending traffic before routes are up.
+- Minimize calls to re-establish the VPN tunnel, since this may cause Android to leak some traffic.
+
 
 ## [android/2024.10-beta2] - 2024-12-20
-
 ### Fixed
 - Update bundled relay list to address a UI bug in the filter screen.
 

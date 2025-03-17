@@ -650,7 +650,7 @@ export default class AppRenderer {
             useMultihop: wireguardConstraints.useMultihop,
             entryLocation: liftConstraint(wireguardConstraints.entryLocation),
           },
-          tunnelProtocol: liftConstraint(tunnelProtocol),
+          tunnelProtocol,
         },
       });
     } else if ('customTunnelEndpoint' in relaySettings) {
@@ -765,10 +765,7 @@ export default class AppRenderer {
         return RoutePath.deviceRevoked;
       } else if (!this.isLoggedIn()) {
         return RoutePath.login;
-      } else if (
-        loginState.type === 'ok' &&
-        (loginState.expiredState === 'expired' || loginState.method === 'new_account')
-      ) {
+      } else if (loginState.type === 'ok' && loginState.expiredState === 'expired') {
         return RoutePath.expired;
       } else if (loginState.type === 'ok' && loginState.expiredState === 'time_added') {
         return RoutePath.timeAdded;
