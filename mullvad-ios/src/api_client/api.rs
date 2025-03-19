@@ -123,8 +123,6 @@ async fn mullvad_api_get_relays_inner(
         Ok(_) => false,
     };
 
-
-
     let response = retry_future(future_factory, should_retry, retry_strategy.delays()).await?;
 
     SwiftMullvadApiResponse::with_body(response).await

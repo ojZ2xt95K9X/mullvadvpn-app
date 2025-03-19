@@ -174,14 +174,9 @@ final class RelayCacheTracker: RelayCacheTrackerProtocol, @unchecked Sendable {
                 return AnyCancellable()
             }
 
-            return self.apiProxy.getRelays(etag: "hello", retryStrategy: .noRetry) { result in
-                print(result)
+            return self.apiProxy.getRelays(etag: cachedRelays?.etag, retryStrategy: .noRetry) { result in
                 finish(self.handleResponse(result: result))
             }
-
-//            return self.apiProxy.mullvadApiGetRelayList(retryStrategy: .noRetry, etag: cachedRelays.etag) { result in
-//                finish(self.handleResponse(result: result))
-//            }
         }
 
         operation.addObserver(
