@@ -198,23 +198,6 @@ impl VersionUpdaterInner {
         self.last_app_version_info.as_ref().map(|(info, _)| info)
     }
 
-    /// Convert a [AppVersionResponse] to an [AppVersionInfo].
-    fn response_to_version_info(&self, response: AppVersionResponse) -> AppVersionInfo {
-        let suggested_upgrade = suggested_upgrade(
-            &APP_VERSION,
-            &response.latest_stable,
-            &response.latest_beta,
-            self.show_beta_releases || is_beta_version(),
-        );
-
-        AppVersionInfo {
-            supported: response.supported,
-            latest_stable: response.latest_stable.unwrap_or_else(|| "".to_owned()),
-            latest_beta: response.latest_beta,
-            suggested_upgrade,
-        }
-    }
-
     /// Update [Self::last_app_version_info] and write it to disk cache, and notify the `update`
     /// callback.
     async fn update_version_info(
@@ -313,19 +296,7 @@ impl VersionUpdaterInner {
                             .last_app_version_info()
                             .cloned()
                         {
-                            let suggested_upgrade = suggested_upgrade(
-                                &APP_VERSION,
-                                &Some(last_app_version_info.latest_stable.clone()),
-                                &last_app_version_info.latest_beta,
-                                self.show_beta_releases || is_beta_version(),
-                            );
-
-                            self.update_version_info(&update, AppVersionInfo {
-                                supported: last_app_version_info.supported,
-                                latest_stable: last_app_version_info.latest_stable,
-                                latest_beta: last_app_version_info.latest_beta,
-                                suggested_upgrade,
-                            }).await;
+                            log::warn!("Received SetShowBetaReleases message")
                         }
                     }
 
@@ -361,17 +332,9 @@ impl VersionUpdaterInner {
 
                 response = version_check => {
                     match response {
-                        Ok(version_info_response) => {
-                            let new_version_info =
-                                self.response_to_version_info(version_info_response);
-
-                            // Respond to all pending GetVersionInfo commands
-                            for done_tx in self.get_version_info_responders.drain(..) {
-                                let _ = done_tx.send(new_version_info.clone());
-                            }
-
-                            self.update_version_info(&update, new_version_info).await;
-
+                        Ok(version_info) => {
+                            log::error!("Unimplemented!");
+                            log::debug!("{version_info:#?}");
                         }
                         Err(err) => {
                             log::error!("Failed to fetch version info: {err:#}");
@@ -526,46 +489,7 @@ fn dev_version_cache() -> AppVersionInfo {
 
     AppVersionInfo {
         supported: false,
-        latest_stable: mullvad_version::VERSION.to_owned(),
-        latest_beta: mullvad_version::VERSION.to_owned(),
         suggested_upgrade: None,
-    }
-}
-
-/// If current_version is not the latest, return a string containing the latest version.
-fn suggested_upgrade(
-    current_version: &Version,
-    latest_stable: &Option<String>,
-    latest_beta: &str,
-    show_beta: bool,
-) -> Option<String> {
-    let stable_version = latest_stable
-        .as_ref()
-        .and_then(|stable| Version::from_str(stable).ok());
-
-    let beta_version = if show_beta {
-        Version::from_str(latest_beta).ok()
-    } else {
-        None
-    };
-
-    let latest_version = match (&stable_version, &beta_version) {
-        (Some(_), None) => stable_version,
-        (None, Some(_)) => beta_version,
-        (Some(stable), Some(beta)) => {
-            if beta > stable {
-                beta_version
-            } else {
-                stable_version
-            }
-        }
-        (None, None) => None,
-    }?;
-
-    if &latest_version > current_version {
-        Some(latest_version.to_string())
-    } else {
-        None
     }
 }
 
@@ -736,98 +660,5 @@ mod test {
             latest_stable: None,
             latest_beta: "2024.1-beta1".to_owned(),
         }
-    }
-
-    #[test]
-    fn test_version_upgrade_suggestions() {
-        let latest_stable = Some("2020.4".to_string());
-        let latest_beta = "2020.5-beta3";
-
-        let older_stable = Version::from_str("2020.3").unwrap();
-        let current_stable = Version::from_str("2020.4").unwrap();
-        let newer_stable = Version::from_str("2021.5").unwrap();
-
-        let older_beta = Version::from_str("2020.3-beta3").unwrap();
-        let current_beta = Version::from_str("2020.5-beta3").unwrap();
-        let newer_beta = Version::from_str("2021.5-beta3").unwrap();
-
-        let older_alpha = Version::from_str("2020.3-alpha3").unwrap();
-        let current_alpha = Version::from_str("2020.5-alpha3").unwrap();
-        let newer_alpha = Version::from_str("2021.5-alpha3").unwrap();
-
-        assert_eq!(
-            suggested_upgrade(&older_stable, &latest_stable, latest_beta, false),
-            Some("2020.4".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&older_stable, &latest_stable, latest_beta, true),
-            Some("2020.5-beta3".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&current_stable, &latest_stable, latest_beta, false),
-            None
-        );
-        assert_eq!(
-            suggested_upgrade(&current_stable, &latest_stable, latest_beta, true),
-            Some("2020.5-beta3".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&newer_stable, &latest_stable, latest_beta, false),
-            None
-        );
-        assert_eq!(
-            suggested_upgrade(&newer_stable, &latest_stable, latest_beta, true),
-            None
-        );
-
-        assert_eq!(
-            suggested_upgrade(&older_beta, &latest_stable, latest_beta, false),
-            Some("2020.4".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&older_beta, &latest_stable, latest_beta, true),
-            Some("2020.5-beta3".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&current_beta, &latest_stable, latest_beta, false),
-            None
-        );
-        assert_eq!(
-            suggested_upgrade(&current_beta, &latest_stable, latest_beta, true),
-            None
-        );
-        assert_eq!(
-            suggested_upgrade(&newer_beta, &latest_stable, latest_beta, false),
-            None
-        );
-        assert_eq!(
-            suggested_upgrade(&newer_beta, &latest_stable, latest_beta, true),
-            None
-        );
-
-        assert_eq!(
-            suggested_upgrade(&older_alpha, &latest_stable, latest_beta, false),
-            Some("2020.4".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&older_alpha, &latest_stable, latest_beta, true),
-            Some("2020.5-beta3".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&current_alpha, &latest_stable, latest_beta, false),
-            None,
-        );
-        assert_eq!(
-            suggested_upgrade(&current_alpha, &latest_stable, latest_beta, true),
-            Some("2020.5-beta3".to_owned())
-        );
-        assert_eq!(
-            suggested_upgrade(&newer_alpha, &latest_stable, latest_beta, false),
-            None
-        );
-        assert_eq!(
-            suggested_upgrade(&newer_alpha, &latest_stable, latest_beta, true),
-            None
-        );
     }
 }

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 /// AppVersionInfo represents the current stable and the current latest release versions of the
@@ -12,13 +14,16 @@ pub struct AppVersionInfo {
     ///
     /// The user should really upgrade when this is false.
     pub supported: bool,
-    /// Latest stable version
-    pub latest_stable: AppVersion,
-    /// Equal to `latest_stable` when the newest release is a stable release. But will contain
-    /// beta versions when those are out for testing.
-    pub latest_beta: AppVersion,
     /// Whether should update to newer version
-    pub suggested_upgrade: Option<AppVersion>,
+    pub suggested_upgrade: Option<SuggestedUpgrade>,
 }
 
-pub type AppVersion = String;
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SuggestedUpgrade {
+    /// Version available for update
+    pub version: mullvad_version::Version,
+    /// Changelog
+    pub changelog: Option<String>,
+    /// Path to the available installer, iff it has been verified
+    pub verified_installer_path: Option<PathBuf>,
+}

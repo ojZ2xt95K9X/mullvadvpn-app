@@ -2921,6 +2921,7 @@ dependencies = [
  "intersection-derive",
  "ipnetwork",
  "log",
+ "mullvad-version",
  "regex",
  "serde",
  "talpid-types",
