@@ -40,7 +40,10 @@ android {
 }
 
 protobuf {
-    protoc { artifact = libs.plugins.protobuf.protoc.get().toString() }
+    protoc {
+        // path = "dummy"
+        artifact = libs.plugins.protobuf.protoc.get().toString()
+    }
     plugins {
         create("java") { artifact = libs.plugins.grpc.protoc.gen.grpc.java.get().toString() }
         create("grpc") { artifact = libs.plugins.grpc.protoc.gen.grpc.java.get().toString() }
