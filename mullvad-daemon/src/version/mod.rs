@@ -36,6 +36,7 @@ pub enum Error {
     #[error("Version router is down")]
     VersionRouterClosed,
 
+    #[cfg(update)]
     #[error("Failed to download app update")]
     AppUpdate(#[from] mullvad_update::app::DownloadError),
 
