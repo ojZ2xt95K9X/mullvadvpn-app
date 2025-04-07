@@ -4,7 +4,10 @@ use std::{
     fs, future, io,
     net::{Ipv4Addr, SocketAddr},
     path::Path,
-    sync::{Arc, LazyLock},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, LazyLock,
+    },
     time::Duration,
 };
 use tokio::{net::UdpSocket, time::interval};
@@ -34,6 +37,13 @@ pub struct Client {
     fragments: Fragments,
     /// Maximum packet size
     maximum_packet_size: u16,
+    stats: Arc<Stats>,
+}
+
+#[derive(Debug, Default)]
+struct Stats {
+    rx_bytes: AtomicUsize,
+    tx_bytes: AtomicUsize,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -154,6 +164,7 @@ impl Client {
             fragments: Fragments::default(),
             _send_stream: send_stream,
             maximum_packet_size,
+            stats: Arc::default(),
         })
     }
 
@@ -212,8 +223,10 @@ impl Client {
         loop {
             tokio::select! {
                 client_read = self.client_socket.recv_buf_from(&mut client_read_buf) => {
-                    let (_bytes_received, recv_addr) = client_read.map_err(Error::ClientRead)?;
+                    let (bytes_received, recv_addr) = client_read.map_err(Error::ClientRead)?;
                     return_addr = recv_addr;
+
+                    self.stats.tx_bytes.fetch_add(bytes_received, Ordering::Relaxed);
 
                     let mut send_buf = client_read_buf.split().freeze();
                     if send_buf.len() < (Into::<usize>::into(self.maximum_packet_size) - 100usize) {
@@ -247,6 +260,9 @@ impl Client {
                                 continue;
                             }
                             let payload = response.into_payload();
+
+                            self.stats.rx_bytes.fetch_add(payload.len(), Ordering::Relaxed);
+
                             if let Ok(Some(payload)) = self.fragments.handle_incoming_packet(payload) {
                                 self.client_socket
                                     .send_to(payload.chunk(), return_addr)
