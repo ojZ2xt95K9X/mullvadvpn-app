@@ -8,7 +8,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc, LazyLock,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tokio::{net::UdpSocket, time::interval};
 
@@ -220,6 +220,8 @@ impl Client {
         let mut fragment_id = 1u16;
         let mut interval = interval(Duration::from_secs(3));
 
+        let mut prev_stats = Instant::now();
+
         loop {
             tokio::select! {
                 client_read = self.client_socket.recv_buf_from(&mut client_read_buf) => {
@@ -227,6 +229,11 @@ impl Client {
                     return_addr = recv_addr;
 
                     self.stats.tx_bytes.fetch_add(bytes_received, Ordering::Relaxed);
+
+                    if prev_stats.elapsed() >= Duration::from_secs(3) {
+                        prev_stats = Instant::now();
+                        println!("stats: {:?}", self.stats);
+                    }
 
                     let mut send_buf = client_read_buf.split().freeze();
                     if send_buf.len() < (Into::<usize>::into(self.maximum_packet_size) - 100usize) {
@@ -262,6 +269,10 @@ impl Client {
                             let payload = response.into_payload();
 
                             self.stats.rx_bytes.fetch_add(payload.len(), Ordering::Relaxed);
+                            if prev_stats.elapsed() >= Duration::from_secs(3) {
+                                prev_stats = Instant::now();
+                                println!("stats: {:?}", self.stats);
+                            }
 
                             if let Ok(Some(payload)) = self.fragments.handle_incoming_packet(payload) {
                                 self.client_socket
