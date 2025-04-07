@@ -230,10 +230,10 @@ impl Client {
 
                     self.stats.tx_bytes.fetch_add(bytes_received, Ordering::Relaxed);
 
-                    if prev_stats.elapsed() >= Duration::from_secs(3) {
+                    /*if prev_stats.elapsed() >= Duration::from_secs(3) {
                         prev_stats = Instant::now();
                         println!("stats: {:?}", self.stats);
-                    }
+                    }*/
 
                     let mut send_buf = client_read_buf.split().freeze();
                     if send_buf.len() < (Into::<usize>::into(self.maximum_packet_size) - 100usize) {
@@ -269,10 +269,10 @@ impl Client {
                             let payload = response.into_payload();
 
                             self.stats.rx_bytes.fetch_add(payload.len(), Ordering::Relaxed);
-                            if prev_stats.elapsed() >= Duration::from_secs(3) {
+                            /*if prev_stats.elapsed() >= Duration::from_secs(3) {
                                 prev_stats = Instant::now();
                                 println!("stats: {:?}", self.stats);
-                            }
+                            }*/
 
                             if let Ok(Some(payload)) = self.fragments.handle_incoming_packet(payload) {
                                 self.client_socket
@@ -296,6 +296,8 @@ impl Client {
                 },
             };
         }
+
+        println!("stats: {:?}", self.stats);
     }
 }
 
