@@ -46,6 +46,12 @@ struct Stats {
     tx_bytes: AtomicUsize,
 }
 
+impl Drop for Stats {
+    fn drop(&mut self) {
+        println!("stats: {:?}", self);
+    }
+}
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -296,8 +302,6 @@ impl Client {
                 },
             };
         }
-
-        println!("stats: {:?}", self.stats);
     }
 }
 
