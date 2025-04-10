@@ -7,6 +7,7 @@ use mullvad_update::app::{
 use rand::seq::SliceRandom;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+use talpid_types::ErrorExt;
 use tokio::fs;
 use tokio::sync::broadcast;
 
@@ -18,7 +19,7 @@ pub enum Error {
     #[error("Failed to create download directory")]
     CreateDownloadDir(#[source] std::io::Error),
 
-    #[error("Failed to download app")]
+    #[error(transparent)]
     Download(#[from] DownloadError),
 
     #[error("Download was cancelled or panicked")]
@@ -94,21 +95,21 @@ async fn start(
     };
     let mut downloader = HttpAppDownloader::from(params);
 
-    if let Err(download_err) = downloader.download_executable().await {
-        log::error!("Failed to download app: {download_err}");
+    downloader.download_executable().await.inspect_err(|err| {
         let _ = event_tx.send(AppUpgradeEvent::Error(AppUpgradeError::DownloadFailed));
-        return Err(download_err.into());
-    };
-
+        log::error!("{}", err.display_chain());
+        log::info!("Cleaning up download at '{:?}'", downloader.bin_path());
+        std::fs::remove_file(downloader.bin_path()).expect("Failed to remove file");
+    })?;
     let _ = event_tx.send(AppUpgradeEvent::VerifyingInstaller);
-
-    if let Err(verify_err) = downloader.verify().await {
-        log::error!("Failed to verify downloaded app: {verify_err}");
+    downloader.verify().await.inspect_err(|err| {
         let _ = event_tx.send(AppUpgradeEvent::Error(AppUpgradeError::VerificationFailed));
-        return Err(verify_err.into());
-    };
-
+        log::error!("{}", err.display_chain());
+        log::info!("Cleaning up download at '{:?}'", downloader.bin_path());
+        std::fs::remove_file(downloader.bin_path()).expect("Failed to remove file");
+    })?;
     let _ = event_tx.send(AppUpgradeEvent::VerifiedInstaller);
+
     Ok(downloader.bin_path())
 }
 

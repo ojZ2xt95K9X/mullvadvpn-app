@@ -67,7 +67,9 @@ pub async fn get_to_file(
     progress_updater: &mut impl ProgressUpdater,
     size_hint: SizeHint,
 ) -> anyhow::Result<()> {
-    let file = create_or_append(file).await?;
+    let file = create_or_append(file)
+        .await
+        .context("Failed to create or open file")?;
     let file = BufWriter::new(file);
     get_to_writer(file, url, progress_updater, size_hint).await
 }
