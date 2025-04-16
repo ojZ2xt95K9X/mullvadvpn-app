@@ -1,156 +1,118 @@
 package net.mullvad.mullvadvpn.compose.dialog
 
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.AndroidComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import de.mannodermaus.junit5.compose.ComposeContext
-import io.mockk.MockKAnnotations
+import androidx.compose.ui.test.runAndroidComposeUiTest
+import br.com.colman.kotest.KotestRunnerAndroid
+import io.kotest.core.spec.style.StringSpec
 import io.mockk.mockk
 import io.mockk.verify
-import net.mullvad.mullvadvpn.compose.createEdgeToEdgeComposeExtension
-import net.mullvad.mullvadvpn.compose.setContentWithTheme
 import net.mullvad.mullvadvpn.compose.state.CreateCustomListUiState
 import net.mullvad.mullvadvpn.compose.test.CREATE_CUSTOM_LIST_DIALOG_INPUT_TEST_TAG
 import net.mullvad.mullvadvpn.lib.model.CustomListAlreadyExists
 import net.mullvad.mullvadvpn.lib.model.UnknownCustomListError
+import net.mullvad.mullvadvpn.lib.theme.AppTheme
 import net.mullvad.mullvadvpn.usecase.customlists.CreateWithLocationsError
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
+import org.junit.runner.RunWith
 
-class CreateCustomListDialogTest {
-    @OptIn(ExperimentalTestApi::class)
-    @JvmField
-    @RegisterExtension
-    val composeExtension = createEdgeToEdgeComposeExtension()
+@OptIn(ExperimentalTestApi::class)
+@RunWith(KotestRunnerAndroid::class)
+class CreateCustomListDialogTest :
+    StringSpec({
+        "given no error should not show any error text" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val state = CreateCustomListUiState()
+                setContentWithTheme { InitDialog(state) }
 
-    @BeforeEach
-    fun setup() {
-        MockKAnnotations.init(this)
-    }
-
-    private fun ComposeContext.initDialog(
-        state: CreateCustomListUiState = CreateCustomListUiState(),
-        createCustomList: (String) -> Unit = {},
-        onInputChanged: () -> Unit = {},
-        onDismiss: () -> Unit = {},
-    ) {
-        setContentWithTheme {
-            CreateCustomListDialog(
-                state = state,
-                createCustomList = createCustomList,
-                onInputChanged = onInputChanged,
-                onDismiss = onDismiss,
-            )
-        }
-    }
-
-    @Test
-    fun givenNoErrorShouldShowNoErrorMessage() =
-        composeExtension.use {
-            // Arrange
-            val state = CreateCustomListUiState(error = null)
-            initDialog(state)
-
-            // Assert
-            onNodeWithText(NAME_EXIST_ERROR_TEXT).assertDoesNotExist()
-            onNodeWithText(OTHER_ERROR_TEXT).assertDoesNotExist()
+                onNodeWithText(NAME_EXIST_ERROR_TEXT).assertDoesNotExist()
+                onNodeWithText(OTHER_ERROR_TEXT).assertDoesNotExist()
+            }
         }
 
-    @Test
-    fun givenCustomListExistsShouldShowCustomListExitsErrorText() =
-        composeExtension.use {
-            // Arrange
-            val state =
-                CreateCustomListUiState(
-                    error = CreateWithLocationsError.Create(CustomListAlreadyExists)
-                )
-            initDialog(state)
+        "given custom list exists should show custom list exists error text" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val state =
+                    CreateCustomListUiState(
+                        error = CreateWithLocationsError.Create(CustomListAlreadyExists)
+                    )
+                setContentWithTheme { InitDialog(state) }
 
-            // Assert
-            onNodeWithText(NAME_EXIST_ERROR_TEXT).assertExists()
-            onNodeWithText(OTHER_ERROR_TEXT).assertDoesNotExist()
+                onNodeWithText(NAME_EXIST_ERROR_TEXT).assertExists()
+                onNodeWithText(OTHER_ERROR_TEXT).assertDoesNotExist()
+            }
         }
 
-    @Test
-    fun givenOtherCustomListErrorShouldShowAnErrorOccurredErrorText() =
-        composeExtension.use {
-            // Arrange
-            val state =
-                CreateCustomListUiState(
-                    error = CreateWithLocationsError.Create(UnknownCustomListError(Throwable()))
-                )
-            initDialog(state)
+        "given other custom list error should show an error occurred error text" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val state =
+                    CreateCustomListUiState(
+                        error = CreateWithLocationsError.Create(UnknownCustomListError(Throwable()))
+                    )
+                setContentWithTheme { InitDialog(state) }
 
-            // Assert
-            onNodeWithText(NAME_EXIST_ERROR_TEXT).assertDoesNotExist()
-            onNodeWithText(OTHER_ERROR_TEXT).assertExists()
+                onNodeWithText(NAME_EXIST_ERROR_TEXT).assertDoesNotExist()
+                onNodeWithText(OTHER_ERROR_TEXT).assertExists()
+            }
         }
 
-    @Test
-    fun whenCancelIsClickedShouldDismissDialog() =
-        composeExtension.use {
-            // Arrange
-            val mockedOnDismiss: () -> Unit = mockk(relaxed = true)
-            val state = CreateCustomListUiState()
-            initDialog(state, onDismiss = mockedOnDismiss)
+        "when cancel is clicked should dismiss dialog" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val mockedOnDismiss: () -> Unit = mockk(relaxed = true)
+                val state = CreateCustomListUiState()
+                setContentWithTheme { InitDialog(state, onDismiss = mockedOnDismiss) }
 
-            // Act
-            onNodeWithText(CANCEL_BUTTON_TEXT).performClick()
+                onNodeWithText(CANCEL_BUTTON_TEXT).performClick()
 
-            // Assert
-            verify { mockedOnDismiss.invoke() }
+                verify { mockedOnDismiss.invoke() }
+            }
         }
 
-    @Test
-    fun givenEmptyTextInputWhenSubmitIsClickedThenShouldNotCallOnCreate() =
-        composeExtension.use {
-            // Arrange
-            val mockedCreateCustomList: (String) -> Unit = mockk(relaxed = true)
-            val state = CreateCustomListUiState()
-            initDialog(state, createCustomList = mockedCreateCustomList)
+        "given empty text input when submit is clicked then should not call on create" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val mockedCreateCustomList: (String) -> Unit = mockk(relaxed = true)
+                val state = CreateCustomListUiState()
+                setContentWithTheme { InitDialog(state, createCustomList = mockedCreateCustomList) }
 
-            // Act
-            onNodeWithText(CREATE_BUTTON_TEXT).performClick()
+                onNodeWithText(CREATE_BUTTON_TEXT).performClick()
 
-            // Assert
-            verify(exactly = 0) { mockedCreateCustomList.invoke(any()) }
+                verify(exactly = 0) { mockedCreateCustomList.invoke(any()) }
+            }
         }
 
-    @Test
-    fun givenValidTextInputWhenSubmitIsClickedThenShouldCallOnCreate() =
-        composeExtension.use {
-            // Arrange
-            val mockedCreateCustomList: (String) -> Unit = mockk(relaxed = true)
-            val inputText = "NEW LIST"
-            val state = CreateCustomListUiState()
-            initDialog(state, createCustomList = mockedCreateCustomList)
+        "given valid text input when submit is clicked then should call on create" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val mockedCreateCustomList: (String) -> Unit = mockk(relaxed = true)
+                val inputText = "NEW LIST"
+                val state = CreateCustomListUiState()
+                setContentWithTheme { InitDialog(state, createCustomList = mockedCreateCustomList) }
 
-            // Act
-            onNodeWithTag(CREATE_CUSTOM_LIST_DIALOG_INPUT_TEST_TAG).performTextInput(inputText)
-            onNodeWithText(CREATE_BUTTON_TEXT).performClick()
+                onNodeWithTag(CREATE_CUSTOM_LIST_DIALOG_INPUT_TEST_TAG).performTextInput(inputText)
+                onNodeWithText(CREATE_BUTTON_TEXT).performClick()
 
-            // Assert
-            verify { mockedCreateCustomList.invoke(inputText) }
+                verify { mockedCreateCustomList.invoke(inputText) }
+            }
         }
 
-    @Test
-    fun whenInputIsChangedShouldCallOnInputChanged() =
-        composeExtension.use {
-            // Arrange
-            val mockedOnInputChanged: () -> Unit = mockk(relaxed = true)
-            val inputText = "NEW LIST"
-            val state = CreateCustomListUiState()
-            initDialog(state, onInputChanged = mockedOnInputChanged)
+        "when input is changed should call on input changed" {
+            runAndroidComposeUiTest<ComponentActivity> {
+                val mockedOnInputChanged: () -> Unit = mockk(relaxed = true)
+                val inputText = "NEW LIST"
+                setContentWithTheme {
+                    InitDialog(CreateCustomListUiState(), onInputChanged = mockedOnInputChanged)
+                }
 
-            // Act
-            onNodeWithTag(CREATE_CUSTOM_LIST_DIALOG_INPUT_TEST_TAG).performTextInput(inputText)
+                onNodeWithTag(CREATE_CUSTOM_LIST_DIALOG_INPUT_TEST_TAG).performTextInput(inputText)
 
-            // Assert
-            verify { mockedOnInputChanged.invoke() }
+                verify { mockedOnInputChanged.invoke() }
+            }
         }
+    }) {
 
     companion object {
         private const val NAME_EXIST_ERROR_TEXT = "Name is already taken."
@@ -158,4 +120,24 @@ class CreateCustomListDialogTest {
         private const val CANCEL_BUTTON_TEXT = "Cancel"
         private const val CREATE_BUTTON_TEXT = "Create"
     }
+}
+
+@OptIn(ExperimentalTestApi::class)
+private fun AndroidComposeUiTest<*>.setContentWithTheme(content: @Composable () -> Unit) {
+    setContent { AppTheme(content) }
+}
+
+@Composable
+private fun InitDialog(
+    state: CreateCustomListUiState = CreateCustomListUiState(),
+    createCustomList: (String) -> Unit = {},
+    onInputChanged: () -> Unit = {},
+    onDismiss: () -> Unit = {},
+) {
+    CreateCustomListDialog(
+        state = state,
+        createCustomList = createCustomList,
+        onInputChanged = onInputChanged,
+        onDismiss = onDismiss,
+    )
 }

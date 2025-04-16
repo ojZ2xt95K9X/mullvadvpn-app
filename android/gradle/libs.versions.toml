@@ -46,6 +46,13 @@ koin-compose = "4.0.4"
 
 # Ktor
 # Bumping to 3.1.0 causes an AbstractMethodError in the serialization logic (DROID-1820).
+kotest-assertions-arrow = "2.0.0"
+kotest-runner-junit5 = "6.0.0.M3"
+# 1.1.1 Does not work with 6.0.0.M3, however 6.0.0.M1 do. They are holding off updating this lib
+# until there is a stable 6.0.0 release:
+# https://github.com/LeoColman/kotest-android/issues/36
+# https://github.com/LeoColman/kotest-android/issues/31
+kotest-runner-android = "1.1.1"
 ktor = "3.0.3"
 
 # Kotlin
@@ -134,6 +141,9 @@ grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpc-ko
 grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grpc" }
 
 # Protobuf
+kotest-assertions-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-assertions-arrow" }
+kotest-runner-android = { module = "br.com.colman:kotest-runner-android", version.ref = "kotest-runner-android" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest-runner-junit5" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "protobuf" }
 
 # Koin

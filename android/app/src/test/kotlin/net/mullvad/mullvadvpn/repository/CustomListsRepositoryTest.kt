@@ -2,6 +2,10 @@ package net.mullvad.mullvadvpn.repository
 
 import arrow.core.left
 import arrow.core.right
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -10,7 +14,6 @@ import io.mockk.mockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runTest
 import net.mullvad.mullvadvpn.lib.daemon.grpc.ManagementService
 import net.mullvad.mullvadvpn.lib.model.CustomList
 import net.mullvad.mullvadvpn.lib.model.CustomListAlreadyExists
@@ -20,60 +23,51 @@ import net.mullvad.mullvadvpn.lib.model.GeoLocationId
 import net.mullvad.mullvadvpn.lib.model.GetCustomListError
 import net.mullvad.mullvadvpn.lib.model.NameAlreadyExists
 import net.mullvad.mullvadvpn.lib.model.Settings
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 @ExperimentalCoroutinesApi
-class CustomListsRepositoryTest {
-    private val mockManagementService: ManagementService = mockk()
-    private lateinit var customListsRepository: CustomListsRepository
+class CustomListsRepositoryTest :
+    StringSpec({
+        val mockManagementService: ManagementService = mockk(relaxed = true)
+        lateinit var customListsRepository: CustomListsRepository
+        val settingsFlow: MutableStateFlow<Settings> = MutableStateFlow(mockk(relaxed = true))
 
-    private val settingsFlow: MutableStateFlow<Settings> = MutableStateFlow(mockk(relaxed = true))
+        beforeEach {
+            mockkStatic(RELAY_LIST_EXTENSIONS)
+            every { mockManagementService.settings } returns settingsFlow
+            customListsRepository =
+                CustomListsRepository(
+                    managementService = mockManagementService,
+                    dispatcher = UnconfinedTestDispatcher(),
+                )
+        }
 
-    @BeforeEach
-    fun setup() {
-        mockkStatic(RELAY_LIST_EXTENSIONS)
-        every { mockManagementService.settings } returns settingsFlow
-        customListsRepository =
-            CustomListsRepository(
-                managementService = mockManagementService,
-                dispatcher = UnconfinedTestDispatcher(),
-            )
-    }
-
-    @Test
-    fun `get custom list by id should return custom list when id matches custom list in settings`() =
-        runTest {
-            // Arrange
+        "get custom list by id should return custom list when id matches custom list in settings" {
             val customListId = CustomListId("1")
-            val mockCustomList =
+            val expectedCustomList =
                 CustomList(
                     id = customListId,
                     name = mockk(relaxed = true),
-                    locations = mockk(relaxed = true),
+                    locations = emptyList()
                 )
             val mockSettings: Settings = mockk()
-            every { mockSettings.customLists } returns listOf(mockCustomList)
+            every { mockSettings.customLists } returns listOf(expectedCustomList)
             settingsFlow.value = mockSettings
 
             // Act
             val result = customListsRepository.getCustomListById(customListId)
 
             // Assert
-            assertEquals(mockCustomList, result.getOrNull())
+            result shouldBeRight expectedCustomList
         }
 
-    @Test
-    fun `get custom list by id should return get custom list error when id does not matches custom list in settings`() =
-        runTest {
+        "get custom list by id should return get custom list error when id does not matches custom list in settings" {
             // Arrange
             val customListId = CustomListId("1")
             val mockCustomList =
                 CustomList(
                     id = customListId,
                     name = mockk(relaxed = true),
-                    locations = mockk(relaxed = true),
+                    locations = emptyList(),
                 )
             val mockSettings: Settings = mockk()
             val otherCustomListId = CustomListId("2")
@@ -84,71 +78,63 @@ class CustomListsRepositoryTest {
             val result = customListsRepository.getCustomListById(otherCustomListId)
 
             // Assert
-            assertEquals(GetCustomListError(otherCustomListId), result.leftOrNull())
+            result shouldBeLeft GetCustomListError(otherCustomListId)
         }
 
-    @Test
-    fun `create custom list should return id when creation is successful`() = runTest {
-        // Arrange
-        val customListId = CustomListId("1")
-        val expectedResult = customListId.right()
-        val customListName = CustomListName.fromString("CUSTOM")
-        coEvery { mockManagementService.createCustomList(customListName) } returns expectedResult
-
-        // Act
-        val result = customListsRepository.createCustomList(customListName)
-
-        // Assert
-        assertEquals(expectedResult, result)
-    }
-
-    @Test
-    fun `create custom list should return lists exists error from management service`() = runTest {
-        // Arrange
-        val expectedResult = CustomListAlreadyExists.left()
-        val customListName = CustomListName.fromString("CUSTOM")
-        coEvery { mockManagementService.createCustomList(customListName) } returns expectedResult
-
-        // Act
-        val result = customListsRepository.createCustomList(customListName)
-
-        // Assert
-        assertEquals(expectedResult, result)
-    }
-
-    @Test
-    fun `update custom list name should return success when call ManagementService is successful`() =
-        runTest {
+        "create custom list should return id when creation is successful" {
             // Arrange
             val customListId = CustomListId("1")
-            val expectedResult = Unit.right()
+            val customListName = CustomListName.fromString("CUSTOM")
+            coEvery { mockManagementService.createCustomList(customListName) } returns
+                customListId.right()
+
+            // Act
+            val result = customListsRepository.createCustomList(customListName)
+
+            // Assert
+            result shouldBeRight customListId
+        }
+
+        "create custom list should return lists exists error from management service" {
+            // Arrange
+            val customListName = CustomListName.fromString("CUSTOM")
+            coEvery { mockManagementService.createCustomList(customListName) } returns
+                CustomListAlreadyExists.left()
+
+            // Act
+            val result = customListsRepository.createCustomList(customListName)
+
+            // Assert
+            result shouldBeLeft CustomListAlreadyExists
+        }
+
+        "update custom list name should return success when call ManagementService is successful" {
+            // Arrange
+            val customListId = CustomListId("1")
             val customListName = CustomListName.fromString("CUSTOM")
             val mockSettings: Settings = mockk()
             val mockCustomList =
                 CustomList(
                     id = customListId,
                     name = mockk(relaxed = true),
-                    locations = mockk(relaxed = true),
+                    locations = emptyList(),
                 )
             every { mockSettings.customLists } returns listOf(mockCustomList)
             settingsFlow.value = mockSettings
             coEvery { mockManagementService.updateCustomList(any<CustomList>()) } returns
-                expectedResult
+                Unit.right()
 
             // Act
             val result = customListsRepository.updateCustomListName(customListId, customListName)
 
             // Assert
-            assertEquals(expectedResult, result)
+            result.shouldBeRight()
         }
 
-    @Test
-    fun `update custom list name should return list exists error when list exists error is received`() =
-        runTest {
-            // Arrange
+        "update custom list name should return list exists error when list exists error is received" {
             val customListId = CustomListId("1")
             val customListName = CustomListName.fromString("CUSTOM")
-            val expectedResult = NameAlreadyExists(customListName).left()
+            val expectedError = NameAlreadyExists(customListName)
             val mockSettings: Settings = mockk()
             val mockCustomList =
                 CustomList(
@@ -161,18 +147,17 @@ class CustomListsRepositoryTest {
             every { mockSettings.customLists } returns listOf(mockCustomList)
             settingsFlow.value = mockSettings
             coEvery { mockManagementService.updateCustomList(updatedCustomList) } returns
-                expectedResult
+                expectedError.left()
 
             // Act
             val result = customListsRepository.updateCustomListName(customListId, customListName)
 
             // Assert
-            assertEquals(expectedResult, result)
+            result shouldBeLeft expectedError
         }
 
-    @Test
-    fun `when delete custom lists is called Managementservice delete custom list should be called`() =
-        runTest {
+        "when delete custom lists is called Managementservice delete custom list should be called" {
+
             // Arrange
             val customListId = CustomListId("1")
             coEvery { mockManagementService.deleteCustomList(customListId) } returns Unit.right()
@@ -184,11 +169,8 @@ class CustomListsRepositoryTest {
             coVerify { mockManagementService.deleteCustomList(customListId) }
         }
 
-    @Test
-    fun `update custom list locations should return successful when list exists and update is successful`() =
-        runTest {
+        "update custom list locations should return successful when list exists and update is successful" {
             // Arrange
-            val expectedResult = Unit.right()
             val customListId = CustomListId("1")
             val customListName = CustomListName.fromString("CUSTOM")
             val location = GeoLocationId.Country("se")
@@ -207,17 +189,15 @@ class CustomListsRepositoryTest {
                 customListsRepository.updateCustomListLocations(customListId, listOf(location))
 
             // Assert
-            assertEquals(expectedResult, result)
+            result.shouldBeRight()
         }
 
-    @Test
-    fun `update custom list locations should return get custom list error when list does not exist`() =
-        runTest {
+        "update custom list locations should return get custom list error when list does not exist" {
             // Arrange
             val mockSettings: Settings = mockk()
             val customListId = CustomListId("1")
             val otherCustomListId = CustomListId("2")
-            val expectedResult = GetCustomListError(otherCustomListId).left()
+            val getCustomListError = GetCustomListError(otherCustomListId)
             val mockCustomList =
                 CustomList(
                     id = customListId,
@@ -236,9 +216,9 @@ class CustomListsRepositoryTest {
                 )
 
             // Assert
-            assertEquals(expectedResult, result)
+            result shouldBeLeft getCustomListError
         }
-
+    }) {
     companion object {
         private const val RELAY_LIST_EXTENSIONS =
             "net.mullvad.mullvadvpn.relaylist.RelayListExtensionsKt"

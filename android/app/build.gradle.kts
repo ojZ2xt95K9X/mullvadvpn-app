@@ -337,6 +337,8 @@ tasks.register("ensureValidVersionCode") {
     }
 }
 
+tasks.withType<Test>().configureEach { useJUnitPlatform() }
+
 tasks.create("printVersion") {
     doLast {
         println("versionCode=${project.android.defaultConfig.versionCode}")
@@ -385,6 +387,13 @@ dependencies {
     implementation(projects.tile)
     implementation(projects.lib.theme)
     implementation(projects.service)
+    // Some of these can probably be cleaned up
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.arrow)
+    androidTestImplementation(libs.kotest.runner.android)
+    androidTestImplementation(libs.kotest.runner.junit5)
+    androidTestImplementation(libs.androidx.espresso)
+    androidTestImplementation(libs.androidx.test.runner)
 
     // Play implementation
     playImplementation(projects.lib.billing)
