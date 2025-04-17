@@ -411,4 +411,5 @@
     <string name="device_ip_info_first_paragraph">This feature allows you to choose whether to use only IPv4, only IPv6, or allow the app to automatically decide the best option when connecting to a server.</string>
     <string name="device_ip_info_second_paragraph">It can be useful when you are aware of problems caused by a certain IP version.</string>
     <string name="daita_multihop">%s: Multihop</string>
+    <string name="test_string">%1$s (%2$s) is a crazy %1$s</string>
 </resources>
